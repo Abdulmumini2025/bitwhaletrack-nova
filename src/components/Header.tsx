@@ -129,6 +129,9 @@ export const Header = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="w-full">Admin Panel</Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/create-news" className="w-full">Submit News</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="h-4 w-4 mr-2" />
                       Logout
