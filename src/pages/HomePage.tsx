@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { TrendingUp, Zap, Globe, Shield } from "lucide-react";
 
 // Sample news data (in real app, this would come from your Supabase database)
@@ -87,6 +88,7 @@ export const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [filteredNews, setFilteredNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchNews();
@@ -135,25 +137,66 @@ export const HomePage = () => {
     }
   };
 
-  const handleLike = (newsId: string) => {
-    setNews(prevNews =>
-      prevNews.map(item =>
-        item.id === newsId
-          ? {
-              ...item,
-              user_liked: !item.user_liked,
-              likes_count: item.user_liked 
-                ? (item.likes_count || 0) - 1 
-                : (item.likes_count || 0) + 1,
-              // For sample data compatibility
-              isLiked: !item.user_liked,
-              likes: item.user_liked 
-                ? (item.likes || 0) - 1 
-                : (item.likes || 0) + 1,
-            }
-          : item
-      )
-    );
+  const handleLike = async (newsId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to like articles.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user already liked this article
+      const { data: existingLike } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('news_id', newsId)
+        .single();
+
+      if (existingLike) {
+        // Remove like
+        await supabase
+          .from('likes')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('news_id', newsId);
+      } else {
+        // Add like
+        await supabase
+          .from('likes')
+          .insert({
+            user_id: user.id,
+            news_id: newsId,
+          });
+      }
+
+      // Update local state
+      setNews(prevNews =>
+        prevNews.map(item =>
+          item.id === newsId
+            ? {
+                ...item,
+                user_liked: !item.user_liked,
+                likes_count: item.user_liked 
+                  ? (item.likes_count || 0) - 1 
+                  : (item.likes_count || 0) + 1,
+                // For sample data compatibility
+                isLiked: !item.user_liked,
+                likes: item.user_liked 
+                  ? (item.likes || 0) - 1 
+                  : (item.likes || 0) + 1,
+              }
+            : item
+        )
+      );
+    } catch (error) {
+      console.error('Error handling like:', error);
+    }
   };
 
   return (

@@ -83,6 +83,9 @@ export const Header = () => {
             <Link to="/about" className="hover:text-crypto-blue transition-colors">
               About Us
             </Link>
+            <Link to="/contact" className="hover:text-crypto-blue transition-colors">
+              Contact Us
+            </Link>
           </nav>
 
           {/* Search Bar */}
@@ -112,20 +115,23 @@ export const Header = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/auth" className="w-full">Login / Register</Link>
                   </DropdownMenuItem>
-                ) : (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/create-news" className="w-full">Submit News</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  </>
-                )}
+                  ) : (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile" className="w-full">Profile</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/create-news" className="w-full">Submit News</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/contact" className="w-full">Contact Us</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </DropdownMenuItem>
+                    </>
+                  )}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -150,6 +156,9 @@ export const Header = () => {
               </Link>
               <Link to="/about" className="hover:text-crypto-blue transition-colors">
                 About Us
+              </Link>
+              <Link to="/contact" className="hover:text-crypto-blue transition-colors">
+                Contact Us
               </Link>
               <form onSubmit={handleSearch} className="flex space-x-2">
                 <Input

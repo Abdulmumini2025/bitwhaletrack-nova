@@ -214,6 +214,27 @@ export const AdminPage = () => {
     }
   };
 
+  const deleteMessage = async (messageId: string) => {
+    const { error } = await supabase
+      .from('contact_messages')
+      .delete()
+      .eq('id', messageId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete message.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Message deleted successfully.",
+      });
+      loadMessages();
+    }
+  };
+
   const markMessageAsRead = async (messageId: string) => {
     const { error } = await supabase
       .from('contact_messages')
@@ -468,18 +489,27 @@ export const AdminPage = () => {
                     <div key={message.id} className={`p-4 border rounded-lg ${!message.is_read ? 'bg-muted/50' : ''}`}>
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold">{message.name}</h3>
-                        <div className="flex items-center space-x-2">
-                          {!message.is_read && (
-                            <Badge variant="secondary">New</Badge>
-                          )}
+                      <div className="flex items-center space-x-2">
+                        {!message.is_read && (
+                          <Badge variant="secondary">New</Badge>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => markMessageAsRead(message.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {userRole === 'super_admin' && (
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => markMessageAsRead(message.id)}
+                            variant="destructive"
+                            onClick={() => deleteMessage(message.id)}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
+                        )}
+                      </div>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">{message.email}</p>
                       <p className="text-sm">{message.message}</p>
