@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Header } from "@/components/Header";
 import { PriceTicker } from "@/components/PriceTicker";
 import { BreakingNews } from "@/components/BreakingNews";
 import { NewsCard } from "@/components/NewsCard";
 import { ChatBot } from "@/components/ChatBot";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Zap, Globe, Shield } from "lucide-react";
@@ -58,10 +59,37 @@ const sampleNews = [
 
 const categories = ["All", "Bitcoin", "Altcoins", "Market Trends", "Regulation"];
 
+type NewsArticle = {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  image_url?: string | null;
+  author_id?: string;
+  created_at: string;
+  profiles?: {
+    first_name: string;
+    last_name: string;
+  } | null;
+  likes_count?: number;
+  user_liked?: boolean;
+  // For sample data compatibility
+  image?: string;
+  author?: string;
+  publishedAt?: string;
+  likes?: number;
+  isLiked?: boolean;
+};
+
 export const HomePage = () => {
-  const [news, setNews] = useState(sampleNews);
+  const [news, setNews] = useState<NewsArticle[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [filteredNews, setFilteredNews] = useState(sampleNews);
+  const [filteredNews, setFilteredNews] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
 
   useEffect(() => {
     if (selectedCategory === "All") {
@@ -71,14 +99,56 @@ export const HomePage = () => {
     }
   }, [selectedCategory, news]);
 
+  const fetchNews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      // Transform the data to match our component expectations
+      const transformedNews: NewsArticle[] = data?.map((article) => ({
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        category: article.category,
+        image_url: article.image_url,
+        author_id: article.author_id,
+        created_at: article.created_at,
+        profiles: null, // Will be populated later
+        likes_count: 0,
+        user_liked: false
+      })) || [];
+
+      setNews(transformedNews);
+    } catch (error) {
+      console.error('Error fetching news:', error);
+      // Use sample data as fallback
+      setNews(sampleNews as any);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLike = (newsId: string) => {
     setNews(prevNews =>
       prevNews.map(item =>
         item.id === newsId
           ? {
               ...item,
-              isLiked: !item.isLiked,
-              likes: item.isLiked ? item.likes - 1 : item.likes + 1,
+              user_liked: !item.user_liked,
+              likes_count: item.user_liked 
+                ? (item.likes_count || 0) - 1 
+                : (item.likes_count || 0) + 1,
+              // For sample data compatibility
+              isLiked: !item.user_liked,
+              likes: item.user_liked 
+                ? (item.likes || 0) - 1 
+                : (item.likes || 0) + 1,
             }
           : item
       )
@@ -87,7 +157,6 @@ export const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <PriceTicker />
       
       <main className="container mx-auto px-4 py-8">
@@ -164,15 +233,55 @@ export const HomePage = () => {
             </Badge>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredNews.map((article) => (
-              <NewsCard
-                key={article.id}
-                {...article}
-                onLike={handleLike}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="glass-card p-6 animate-pulse">
+                  <div className="h-40 bg-muted rounded mb-4"></div>
+                  <div className="h-4 bg-muted rounded mb-2"></div>
+                  <div className="h-3 bg-muted rounded mb-4"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : filteredNews.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold mb-2">No news articles yet</h3>
+              <p className="text-muted-foreground">Check back later for the latest crypto news!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredNews.map((article) => {
+                // Handle both database and sample data structures
+                const title = article.title;
+                const content = 'content' in article ? article.content : (article as any).content;
+                const excerpt = content ? content.substring(0, 150) + "..." : "";
+                const category = article.category;
+                const imageUrl = ('image_url' in article ? article.image_url : (article as any).image) || "/placeholder.svg";
+                const author = article.profiles 
+                  ? `${article.profiles.first_name} ${article.profiles.last_name}`
+                  : (article as any).author || "Unknown Author";
+                const publishedAt = 'created_at' in article ? article.created_at : (article as any).publishedAt;
+                const likes = article.likes_count || (article as any).likes || 0;
+                const isLiked = article.user_liked || (article as any).isLiked || false;
+
+                return (
+                  <NewsCard
+                    key={article.id}
+                    title={title}
+                    excerpt={excerpt}
+                    category={category}
+                    imageUrl={imageUrl}
+                    author={author}
+                    publishedAt={publishedAt}
+                    likes={likes}
+                    isLiked={isLiked}
+                    onLike={handleLike}
+                  />
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Load More */}
