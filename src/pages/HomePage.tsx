@@ -3,6 +3,7 @@ import { PriceTicker } from "@/components/PriceTicker";
 import { BreakingNews } from "@/components/BreakingNews";
 import { NewsCard } from "@/components/NewsCard";
 import { ChatBot } from "@/components/ChatBot";
+import { CryptoNewsTicker } from "@/components/CryptoNewsTicker";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -157,6 +158,7 @@ export const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <CryptoNewsTicker />
       <PriceTicker />
       
       <main className="container mx-auto px-4 py-8">
