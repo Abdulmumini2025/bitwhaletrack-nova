@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,34 +131,41 @@ export const ChatBot = () => {
       {/* Chat Toggle Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 h-14 w-14 rounded-full crypto-glow pulse-glow ${
+        className={`fixed bottom-4 right-4 h-12 w-12 rounded-full crypto-glow pulse-glow shadow-lg ${
           isOpen ? "hidden" : "flex"
-        }`}
+        } md:h-14 md:w-14 md:bottom-6 md:right-6`}
         size="icon"
       >
-        <MessageCircle className="h-6 w-6" />
+        <div className="relative">
+          <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
+          <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-crypto-gold animate-pulse" />
+        </div>
       </Button>
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-96 h-[500px] glass-card crypto-glow z-50 flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <Card className="fixed bottom-4 right-4 w-80 h-96 glass-card crypto-glow z-50 flex flex-col shadow-2xl border-crypto-blue/30 md:w-96 md:h-[480px] md:bottom-6 md:right-6">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 py-3">
             <CardTitle className="flex items-center space-x-2">
-              <Bot className="h-6 w-6 text-crypto-blue" />
-              <span className="text-lg font-orbitron">Crypto Assistant</span>
+              <div className="relative">
+                <Bot className="h-5 w-5 text-crypto-blue" />
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-crypto-gold rounded-full animate-pulse"></div>
+              </div>
+              <span className="text-sm font-orbitron md:text-base">AI Assistant</span>
             </CardTitle>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsOpen(false)}
+              className="h-8 w-8"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </Button>
           </CardHeader>
 
           <CardContent className="flex-1 flex flex-col p-0">
-            <ScrollArea className="flex-1 px-4">
-              <div className="space-y-4 pb-4">
+            <ScrollArea className="flex-1 px-3">
+              <div className="space-y-3 pb-3">
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -167,10 +174,10 @@ export const ChatBot = () => {
                     }`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 text-sm ${
+                      className={`max-w-[85%] rounded-lg p-2.5 text-xs md:text-sm ${
                         message.isBot
-                          ? "bg-muted glass text-foreground"
-                          : "bg-primary text-primary-foreground"
+                          ? "bg-muted/80 glass text-foreground border border-crypto-blue/20"
+                          : "bg-gradient-to-r from-crypto-blue to-crypto-gold text-dark-bg font-medium"
                       }`}
                     >
                       {message.text}
@@ -180,11 +187,12 @@ export const ChatBot = () => {
                 
                 {isTyping && (
                   <div className="flex justify-start">
-                    <div className="bg-muted glass rounded-lg p-3 text-sm">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-crypto-blue rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-crypto-blue rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                        <div className="w-2 h-2 bg-crypto-blue rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                    <div className="bg-muted/80 glass rounded-lg p-2.5 border border-crypto-blue/20">
+                      <div className="flex space-x-1 items-center">
+                        <Bot className="h-3 w-3 text-crypto-blue mr-1" />
+                        <div className="w-1.5 h-1.5 bg-crypto-blue rounded-full animate-bounce"></div>
+                        <div className="w-1.5 h-1.5 bg-crypto-blue rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                        <div className="w-1.5 h-1.5 bg-crypto-blue rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                       </div>
                     </div>
                   </div>
@@ -193,23 +201,23 @@ export const ChatBot = () => {
               </div>
             </ScrollArea>
 
-            <div className="border-t p-4">
+            <div className="border-t border-crypto-blue/20 p-3">
               <div className="flex space-x-2">
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask about crypto..."
-                  className="flex-1 glass"
+                  className="flex-1 glass text-xs md:text-sm h-9 border-crypto-blue/30 focus:border-crypto-gold"
                   disabled={isTyping}
                 />
                 <Button
                   onClick={handleSendMessage}
                   size="icon"
                   disabled={!inputMessage.trim() || isTyping}
-                  className="crypto-glow"
+                  className="crypto-glow h-9 w-9 bg-gradient-to-r from-crypto-blue to-crypto-gold hover:from-crypto-blue/90 hover:to-crypto-gold/90"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
               </div>
             </div>
