@@ -13,6 +13,7 @@ export const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetStep, setResetStep] = useState<'email' | 'otp' | 'password'>('email');
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,7 +21,8 @@ export const AuthPage = () => {
     lastName: "",
     confirmPassword: "",
     newPassword: "",
-    confirmNewPassword: ""
+    confirmNewPassword: "",
+    otpCode: ""
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,11 +37,11 @@ export const AuthPage = () => {
     };
     checkUser();
 
-    // Check if this is a password reset redirect
+    // Remove any URL params related to password reset since we're using OTP flow
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('mode') === 'reset') {
-      // Handle password reset via URL params - user came from email link
-      handlePasswordResetFromEmail();
+      // Clear the URL and stay on normal auth page
+      window.history.replaceState({}, document.title, "/auth");
     }
   }, [navigate]);
 
@@ -125,17 +127,21 @@ export const AuthPage = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      // Send OTP to email using Supabase's signInWithOtp
+      const { error } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+        options: {
+          shouldCreateUser: false, // Don't create new user, only reset for existing users
+        }
       });
 
       if (error) throw error;
 
       toast({
-        title: "Reset email sent!",
-        description: "Please check your email and click the link to reset your password.",
+        title: "Verification code sent!",
+        description: "Please check your email for the verification code.",
       });
-      setShowForgotPassword(false);
+      setResetStep('otp');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -147,36 +153,32 @@ export const AuthPage = () => {
     }
   };
 
-  const handlePasswordResetFromEmail = async () => {
-    // This function will be called when user comes from email verification link
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
+  const handleOtpVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     
-    if (accessToken && refreshToken) {
-      try {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: formData.otpCode,
+        type: 'email'
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Show password reset form for user to set new password
-        setShowForgotPassword(true);
-        
-        toast({
-          title: "Email verified!",
-          description: "Please enter your new password below.",
-        });
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: "Invalid or expired reset link.",
-          variant: "destructive",
-        });
-        navigate("/auth");
-      }
+      toast({
+        title: "Code verified!",
+        description: "Please create your new password.",
+      });
+      setResetStep('password');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Invalid verification code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -256,7 +258,7 @@ export const AuthPage = () => {
               </CardTitle>
               <CardDescription className="text-center">
                 {showForgotPassword 
-                  ? (new URLSearchParams(window.location.search).get('mode') === 'reset' ? "Create your new password" : "Enter your email to reset password")
+                  ? (resetStep === 'email' ? "Enter your email to reset password" : resetStep === 'otp' ? "Enter the verification code sent to your email" : "Create your new password")
                   : "Choose your authentication method"
                 }
               </CardDescription>
@@ -264,8 +266,61 @@ export const AuthPage = () => {
             <CardContent>
               {showForgotPassword ? (
                 <div className="space-y-4">
-                  {/* Check if this is a password reset from email verification */}
-                  {new URLSearchParams(window.location.search).get('mode') === 'reset' ? (
+                  {resetStep === 'email' && (
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="reset-email" className="text-foreground">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="reset-email"
+                            name="email"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="pl-10 glass"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full crypto-button"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Sending..." : "Send Verification Code"}
+                      </Button>
+                    </form>
+                  )}
+
+                  {resetStep === 'otp' && (
+                    <form onSubmit={handleOtpVerification} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="otp-code" className="text-foreground">Verification Code</Label>
+                        <Input
+                          id="otp-code"
+                          name="otpCode"
+                          type="text"
+                          placeholder="Enter 6-digit code"
+                          value={formData.otpCode}
+                          onChange={handleInputChange}
+                          className="glass text-center text-lg font-mono"
+                          maxLength={6}
+                          required
+                        />
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full crypto-button"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Verifying..." : "Verify Code"}
+                      </Button>
+                    </form>
+                  )}
+
+                  {resetStep === 'password' && (
                     <form onSubmit={handlePasswordReset} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="new-password" className="text-foreground">New Password</Label>
@@ -316,37 +371,15 @@ export const AuthPage = () => {
                         {isLoading ? "Updating..." : "Update Password"}
                       </Button>
                     </form>
-                  ) : (
-                    <form onSubmit={handleForgotPassword} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="reset-email" className="text-foreground">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="reset-email"
-                            name="email"
-                            type="email"
-                            placeholder="Enter your email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            className="pl-10 glass"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <Button 
-                        type="submit" 
-                        className="w-full crypto-button"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Sending..." : "Send Reset Email"}
-                      </Button>
-                    </form>
                   )}
+                  
                   <div className="text-center">
                     <Button
                       variant="ghost"
-                      onClick={() => setShowForgotPassword(false)}
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setResetStep('email');
+                      }}
                       className="text-sm text-crypto-blue hover:text-crypto-gold transition-colors"
                     >
                       ← Back to Sign In
