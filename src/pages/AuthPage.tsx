@@ -127,22 +127,27 @@ export const AuthPage = () => {
     setIsLoading(true);
     
     try {
-      // Send OTP to email using Supabase's signInWithOtp
-      const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: {
-          shouldCreateUser: false, // Don't create new user, only reset for existing users
-        }
+      console.log("Sending password reset for:", formData.email);
+      
+      // Use resetPasswordForEmail which can be configured to send OTP codes
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Password reset error:", error);
+        throw error;
+      }
+
+      console.log("Password reset email sent successfully");
 
       toast({
         title: "Verification code sent!",
-        description: "Please check your email for the verification code.",
+        description: "Please check your email for the 6-digit verification code. Note: You may need to configure email templates in Supabase dashboard.",
       });
       setResetStep('otp');
     } catch (error: any) {
+      console.error("Failed to send reset email:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -158,13 +163,21 @@ export const AuthPage = () => {
     setIsLoading(true);
     
     try {
+      console.log("Verifying OTP:", formData.otpCode, "for email:", formData.email);
+      
+      // For password reset OTP, we use verifyOtp with type 'recovery'
       const { error } = await supabase.auth.verifyOtp({
         email: formData.email,
         token: formData.otpCode,
-        type: 'email'
+        type: 'recovery' // Use recovery type for password reset
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("OTP verification error:", error);
+        throw error;
+      }
+
+      console.log("OTP verified successfully");
 
       toast({
         title: "Code verified!",
@@ -172,6 +185,7 @@ export const AuthPage = () => {
       });
       setResetStep('password');
     } catch (error: any) {
+      console.error("Failed to verify OTP:", error);
       toast({
         title: "Error",
         description: "Invalid verification code. Please try again.",
