@@ -1,0 +1,156 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bitcoin, Menu, X, Search, User, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+// import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+export const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    // await supabase.auth.signOut();
+    toast({
+      title: "Logged out successfully", 
+      description: "You have been logged out of your account.",
+    });
+    navigate("/");
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  return (
+    <header className="sticky top-0 z-50 glass-card border-b">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 group">
+            <Bitcoin className="h-8 w-8 text-crypto-blue float crypto-glow" />
+            <span className="text-xl font-orbitron font-bold text-gradient">
+              Bitwhaletrack
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link to="/bitcoin" className="hover:text-crypto-blue transition-colors">
+              Bitcoin
+            </Link>
+            <Link to="/altcoins" className="hover:text-crypto-blue transition-colors">
+              Altcoins
+            </Link>
+            <Link to="/market-trends" className="hover:text-crypto-blue transition-colors">
+              Market Trends
+            </Link>
+            <Link to="/regulation" className="hover:text-crypto-blue transition-colors">
+              Regulation
+            </Link>
+            <Link to="/about" className="hover:text-crypto-blue transition-colors">
+              About
+            </Link>
+          </nav>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="hidden lg:flex items-center space-x-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search crypto news..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-64 glass"
+              />
+            </div>
+          </form>
+
+          {/* User Menu */}
+          <div className="flex items-center space-x-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="crypto-glow">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass-card">
+                <DropdownMenuItem asChild>
+                  <Link to="/auth" className="w-full">Login / Register</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="w-full">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin" className="w-full">Admin Panel</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t glass">
+            <nav className="flex flex-col space-y-4 p-4">
+              <Link to="/bitcoin" className="hover:text-crypto-blue transition-colors">
+                Bitcoin News
+              </Link>
+              <Link to="/altcoins" className="hover:text-crypto-blue transition-colors">
+                Altcoin News
+              </Link>
+              <Link to="/market-trends" className="hover:text-crypto-blue transition-colors">
+                Market Trends
+              </Link>
+              <Link to="/regulation" className="hover:text-crypto-blue transition-colors">
+                Regulation
+              </Link>
+              <Link to="/about" className="hover:text-crypto-blue transition-colors">
+                About
+              </Link>
+              <form onSubmit={handleSearch} className="flex space-x-2">
+                <Input
+                  type="search"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 glass"
+                />
+                <Button type="submit" size="icon" className="crypto-glow">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </form>
+            </nav>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
