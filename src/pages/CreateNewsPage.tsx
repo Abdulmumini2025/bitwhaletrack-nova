@@ -12,6 +12,7 @@ export const CreateNewsPage = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -43,6 +44,31 @@ export const CreateNewsPage = () => {
     setIsAuthenticated(true);
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('news-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('news-images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !content || !category) {
@@ -61,13 +87,29 @@ export const CreateNewsPage = () => {
         throw new Error('Not authenticated');
       }
 
+      let finalImageUrl = imageUrl;
+
+      // Upload image file if provided
+      if (imageFile) {
+        const uploadedUrl = await uploadImage(imageFile);
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl;
+        } else {
+          toast({
+            title: "Warning",
+            description: "Failed to upload image, but article will be submitted without it.",
+            variant: "destructive",
+          });
+        }
+      }
+
       const { error } = await supabase
         .from('news')
         .insert({
           title,
           content,
           category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation',
-          image_url: imageUrl || null,
+          image_url: finalImageUrl || null,
           author_id: user.id,
           status: 'pending' as const,
         });
@@ -146,16 +188,31 @@ export const CreateNewsPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Image URL</label>
-                  <Input
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                    type="url"
-                    className="glass"
-                  />
+                  <label className="text-sm font-medium mb-2 block">Image</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Upload Image File</label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                        className="glass"
+                      />
+                    </div>
+                    <div className="text-center text-xs text-muted-foreground">OR</div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Image URL</label>
+                      <Input
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        placeholder="https://example.com/image.jpg"
+                        type="url"
+                        className="glass"
+                      />
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Optional: Add an image URL to make your article more engaging
+                    Optional: Upload an image file or provide a URL to make your article more engaging
                   </p>
                 </div>
 
