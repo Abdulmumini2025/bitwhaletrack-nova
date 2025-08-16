@@ -314,16 +314,52 @@ export const AdminPage = () => {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
+            {userRole === 'super_admin' && (
+              <Card className="border-primary">
+                <CardHeader>
+                  <CardTitle className="text-primary">Admin Management</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    As a Super Admin, you can promote users to Admin role to help manage the platform.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2 p-3 bg-primary/5 rounded-lg">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Admin Privileges Include:</p>
+                      <p className="text-xs text-muted-foreground">
+                        Moderate news, manage users, view messages, and approve content
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {userRole === 'super_admin' ? 
+                    'Manage user roles and permissions. Click "Make Admin" to promote users.' :
+                    'View and manage user accounts.'
+                  }
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {users.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>
+                          {user.role === 'super_admin' && (
+                            <Badge className="bg-gradient-primary text-white">Super Admin</Badge>
+                          )}
+                          {user.role === 'admin' && (
+                            <Badge variant="secondary">Admin</Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           Role: {user.role} | Joined: {new Date(user.created_at).toLocaleDateString()}
                         </p>
@@ -335,8 +371,9 @@ export const AdminPage = () => {
                         {userRole === 'super_admin' && user.role !== 'super_admin' && (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant={user.role === 'admin' ? "destructive" : "default"}
                             onClick={() => updateUserRole(user.id, user.role === 'admin' ? 'user' : 'admin')}
+                            className={user.role !== 'admin' ? "bg-primary hover:bg-primary/90" : ""}
                           >
                             {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                           </Button>
