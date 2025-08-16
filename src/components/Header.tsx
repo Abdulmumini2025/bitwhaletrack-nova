@@ -77,20 +77,11 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/bitcoin" className="hover:text-crypto-blue transition-colors">
-              Bitcoin
-            </Link>
-            <Link to="/altcoins" className="hover:text-crypto-blue transition-colors">
-              Altcoins
-            </Link>
-            <Link to="/market-trends" className="hover:text-crypto-blue transition-colors">
-              Market Trends
-            </Link>
-            <Link to="/regulation" className="hover:text-crypto-blue transition-colors">
-              Regulation
+            <Link to="/" className="hover:text-crypto-blue transition-colors">
+              Home
             </Link>
             <Link to="/about" className="hover:text-crypto-blue transition-colors">
-              About
+              About Us
             </Link>
           </nav>
 
@@ -157,20 +148,11 @@ export const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t glass">
             <nav className="flex flex-col space-y-4 p-4">
-              <Link to="/bitcoin" className="hover:text-crypto-blue transition-colors">
-                Bitcoin News
-              </Link>
-              <Link to="/altcoins" className="hover:text-crypto-blue transition-colors">
-                Altcoin News
-              </Link>
-              <Link to="/market-trends" className="hover:text-crypto-blue transition-colors">
-                Market Trends
-              </Link>
-              <Link to="/regulation" className="hover:text-crypto-blue transition-colors">
-                Regulation
+              <Link to="/" className="hover:text-crypto-blue transition-colors">
+                Home
               </Link>
               <Link to="/about" className="hover:text-crypto-blue transition-colors">
-                About
+                About Us
               </Link>
               <form onSubmit={handleSearch} className="flex space-x-2">
                 <Input
