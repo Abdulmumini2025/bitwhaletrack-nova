@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bitcoin, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Bitcoin, Mail, Lock, User, Eye, EyeOff, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -579,16 +579,35 @@ export const AuthPage = () => {
                     </TabsContent>
                   </Tabs>
 
-                  <div className="mt-6 text-center space-y-2">
-                    <Link to="/" className="text-sm text-crypto-blue hover:text-crypto-gold transition-colors block">
-                      ← Back to Home
-                    </Link>
-                    <Link 
-                      to="/admin-login"
-                      className="text-xs text-muted-foreground hover:text-crypto-blue transition-colors block"
-                    >
-                      Login as Admin →
-                    </Link>
+                  <div className="mt-8 space-y-4">
+                    <div className="text-center">
+                      <Link to="/" className="text-sm text-crypto-blue hover:text-crypto-gold transition-colors block">
+                        ← Back to Home
+                      </Link>
+                    </div>
+                    
+                    {/* Beautiful Admin Login Section */}
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-crypto-gold/20 to-crypto-blue/20 rounded-lg blur-sm"></div>
+                      <div className="relative bg-gradient-to-r from-crypto-gold/10 to-crypto-blue/10 border border-crypto-gold/30 rounded-lg p-4">
+                        <div className="text-center space-y-2">
+                          <div className="flex items-center justify-center space-x-2">
+                            <Shield className="h-5 w-5 text-crypto-gold" />
+                            <span className="text-sm font-medium text-crypto-gold">Administrator Access</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Authorized personnel only
+                          </p>
+                          <Link 
+                            to="/admin-login"
+                            className="inline-flex items-center space-x-2 bg-gradient-to-r from-crypto-gold to-crypto-blue hover:from-crypto-gold/90 hover:to-crypto-blue/90 text-dark-bg font-medium py-2 px-4 rounded-md transition-all duration-200 transform hover:scale-105 crypto-glow text-sm"
+                          >
+                            <Shield className="h-4 w-4" />
+                            <span>Admin Login</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
