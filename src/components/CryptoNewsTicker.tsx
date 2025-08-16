@@ -38,12 +38,23 @@ export const CryptoNewsTicker = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching crypto news:', error);
-      // Fallback static data
+      // Fallback static data with more coins
       setNewsItems([
-        { id: '1', title: 'Bitcoin Trading at $45,000', symbol: 'BTC', price: 45000, change: 2.5 },
-        { id: '2', title: 'Ethereum Reaches $3,200', symbol: 'ETH', price: 3200, change: -1.2 },
-        { id: '3', title: 'Solana Surges to $98', symbol: 'SOL', price: 98, change: 5.8 },
-        { id: '4', title: 'BNB Holds Strong at $280', symbol: 'BNB', price: 280, change: 1.1 },
+        { id: '1', title: 'Bitcoin Trading at $117,800', symbol: 'BTC', price: 117800, change: 0.32 },
+        { id: '2', title: 'Ethereum at $4,419', symbol: 'ETH', price: 4419, change: -0.15 },
+        { id: '3', title: 'XRP Surges to $3.11', symbol: 'XRP', price: 3.11, change: 1.49 },
+        { id: '4', title: 'BNB Strong at $834', symbol: 'BNB', price: 834, change: 1.23 },
+        { id: '5', title: 'Solana Rising $188', symbol: 'SOL', price: 188, change: 1.72 },
+        { id: '6', title: 'Dogecoin at $0.23', symbol: 'DOGE', price: 0.23, change: 2.55 },
+        { id: '7', title: 'Cardano at $0.91', symbol: 'ADA', price: 0.91, change: -2.97 },
+        { id: '8', title: 'TRON at $0.35', symbol: 'TRX', price: 0.35, change: -0.93 },
+        { id: '9', title: 'Polygon at $0.62', symbol: 'MATIC', price: 0.62, change: 3.21 },
+        { id: '10', title: 'Chainlink at $18.45', symbol: 'LINK', price: 18.45, change: 2.11 },
+        { id: '11', title: 'Uniswap at $12.30', symbol: 'UNI', price: 12.30, change: 1.85 },
+        { id: '12', title: 'Litecoin at $98.50', symbol: 'LTC', price: 98.50, change: 0.75 },
+        { id: '13', title: 'Avalanche at $45.20', symbol: 'AVAX', price: 45.20, change: 4.12 },
+        { id: '14', title: 'Polkadot at $3.96', symbol: 'DOT', price: 3.96, change: 2.30 },
+        { id: '15', title: 'Shiba Inu gains', symbol: 'SHIB', price: 0.000025, change: 5.67 },
       ]);
       setLoading(false);
     }
