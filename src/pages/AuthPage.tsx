@@ -13,7 +13,6 @@ export const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [resetStep, setResetStep] = useState<'email' | 'otp' | 'password'>('email');
   const [formData, setFormData] = useState({
     email: "",
@@ -106,35 +105,6 @@ export const AuthPage = () => {
       });
 
       if (error) throw error;
-
-      // Check if user is admin after login
-      if (isAdminLogin) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('user_id', user.id)
-            .single();
-
-          if (profile?.role === 'admin' || profile?.role === 'super_admin') {
-            toast({
-              title: "Admin Login Successful!",
-              description: "Welcome to the admin dashboard.",
-            });
-            navigate("/admin");
-            return;
-          } else {
-            toast({
-              title: "Access Denied",
-              description: "Admin credentials required.",
-              variant: "destructive",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-        }
-      }
 
       toast({
         title: "Welcome back!",
@@ -613,13 +583,12 @@ export const AuthPage = () => {
                     <Link to="/" className="text-sm text-crypto-blue hover:text-crypto-gold transition-colors block">
                       ← Back to Home
                     </Link>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setIsAdminLogin(!isAdminLogin)}
-                      className="text-xs text-muted-foreground hover:text-crypto-blue transition-colors"
+                    <Link 
+                      to="/admin-login"
+                      className="text-xs text-muted-foreground hover:text-crypto-blue transition-colors block"
                     >
-                      {isAdminLogin ? "← Switch to User Login" : "Login as Admin →"}
-                    </Button>
+                      Login as Admin →
+                    </Link>
                   </div>
                 </div>
               )}
