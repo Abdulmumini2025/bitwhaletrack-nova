@@ -9,6 +9,7 @@ import { AboutPage } from "./pages/AboutPage";
 import { AdminPage } from "./pages/AdminPage";
 import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { CreateNewsPage } from "./pages/CreateNewsPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -29,6 +30,7 @@ function App() {
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/create-news" element={<CreateNewsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
