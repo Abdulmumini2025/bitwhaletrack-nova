@@ -406,6 +406,7 @@ export const HomePage = () => {
                 return (
                   <NewsCard
                     key={article.id}
+                    id={article.id}
                     title={title}
                     excerpt={excerpt}
                     category={category}

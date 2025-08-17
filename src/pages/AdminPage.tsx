@@ -11,6 +11,7 @@ import { AdminNewsForm } from '@/components/AdminNewsForm';
 
 interface User {
   id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
   role: 'user' | 'admin' | 'super_admin';
@@ -137,6 +138,7 @@ export const AdminPage = () => {
       .eq('user_id', userId);
 
     if (error) {
+      console.error('Error updating user role:', error);
       toast({
         title: "Error",
         description: "Failed to update user role.",
@@ -149,7 +151,7 @@ export const AdminPage = () => {
         title: "Role Updated",
         description: `User successfully ${actionText}.`,
       });
-      loadUsers(); // Refresh the user list
+      await loadUsers(); // Refresh the user list
     }
   };
 
@@ -392,19 +394,21 @@ export const AdminPage = () => {
                       </div>
                       <div className="flex space-x-2">
                         {userRole === 'super_admin' && user.role !== 'super_admin' && (
-                          <Button
-                            size="sm"
-                            variant={user.role === 'admin' ? "destructive" : "default"}
-                            onClick={() => updateUserRole(user.id, user.role === 'admin' ? 'user' : 'admin')}
-                            className={user.role !== 'admin' ? "bg-primary hover:bg-primary/90" : ""}
-                          >
-                            {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant={user.role === 'admin' ? "destructive" : "default"}
+                              onClick={() => updateUserRole(user.user_id, user.role === 'admin' ? 'user' : 'admin')}
+                              className={user.role !== 'admin' ? "bg-primary hover:bg-primary/90" : ""}
+                            >
+                              {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                            </Button>
+                          </>
                         )}
                         <Button
                           size="sm"
                           variant={user.is_blocked ? "default" : "destructive"}
-                          onClick={() => toggleUserBlock(user.id, user.is_blocked)}
+                          onClick={() => toggleUserBlock(user.user_id, user.is_blocked)}
                         >
                           {user.is_blocked ? 'Unblock' : 'Block'}
                         </Button>
