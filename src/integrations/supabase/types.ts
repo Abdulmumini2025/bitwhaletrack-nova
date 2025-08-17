@@ -158,6 +158,10 @@ export type Database = {
         Args: { news_article_id: string }
         Returns: number
       }
+      is_admin: {
+        Args: { user_uuid?: string }
+        Returns: boolean
+      }
       user_liked_news: {
         Args: { news_article_id: string; user_uuid: string }
         Returns: boolean

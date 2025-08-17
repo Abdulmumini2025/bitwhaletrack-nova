@@ -107,7 +107,7 @@ export const HomePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       const guestLikes = JSON.parse(localStorage.getItem('guestLikes') || '{}');
       
-      // First get news without the foreign key constraint issues
+      // Simplified fetch without profile joins to avoid RLS issues
       const { data, error } = await supabase
         .from('news')
         .select('*')
@@ -117,36 +117,39 @@ export const HomePage = () => {
 
       if (error) throw error;
 
-      // Get like counts and user like status for each article
+      // Process each article
       const newsWithLikes = await Promise.all(
         (data || []).map(async (article) => {
-          // Get author info separately
-          const { data: authorData } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('user_id', article.author_id)
-            .maybeSingle();
-          
-          // Get total likes count
-          const { data: likesData } = await supabase
-            .rpc('get_news_likes_count', { news_article_id: article.id });
+          // Get like count using our function
+          let likesCount = 0;
+          try {
+            const { data: likesData } = await supabase
+              .rpc('get_news_likes_count', { news_article_id: article.id });
+            likesCount = likesData || 0;
+          } catch (err) {
+            console.log('Error getting likes count:', err);
+          }
           
           // Check if current user liked this article
           let userLiked = false;
           if (user) {
-            const { data: userLikedData } = await supabase
-              .rpc('user_liked_news', { 
-                news_article_id: article.id, 
-                user_uuid: user.id 
-              });
-            userLiked = userLikedData || false;
+            try {
+              const { data: userLikedData } = await supabase
+                .rpc('user_liked_news', { 
+                  news_article_id: article.id, 
+                  user_uuid: user.id 
+                });
+              userLiked = userLikedData || false;
+            } catch (err) {
+              console.log('Error checking user like:', err);
+            }
           } else {
             // Check guest likes from localStorage
             userLiked = guestLikes[article.id] || false;
           }
 
           // Calculate display likes (database likes + guest likes if not authenticated)
-          let displayLikes = likesData || 0;
+          let displayLikes = likesCount;
           if (!user && guestLikes[article.id]) {
             displayLikes += 1; // Add guest like to display count
           }
@@ -159,16 +162,13 @@ export const HomePage = () => {
             image_url: article.image_url,
             author_id: article.author_id,
             created_at: article.created_at,
-            profiles: authorData ? {
-              first_name: authorData.first_name,
-              last_name: authorData.last_name
-            } : null,
+            profiles: null, // We'll handle this separately if needed
             likes_count: displayLikes,
             user_liked: userLiked,
             // For compatibility with NewsCard component
             likes: displayLikes,
             isLiked: userLiked,
-            author: authorData ? `${authorData.first_name} ${authorData.last_name}` : 'Unknown',
+            author: 'Crypto News Team', // Default author for now
             publishedAt: article.created_at
           };
         })
@@ -209,33 +209,42 @@ export const HomePage = () => {
                   ...item,
                   user_liked: !isCurrentlyLiked,
                   likes_count: isCurrentlyLiked 
-                    ? (item.likes_count || 0) - 1 
+                    ? Math.max(0, (item.likes_count || 0) - 1) 
                     : (item.likes_count || 0) + 1,
                   // For sample data compatibility
                   isLiked: !isCurrentlyLiked,
                   likes: isCurrentlyLiked 
-                    ? (item.likes || 0) - 1 
+                    ? Math.max(0, (item.likes || 0) - 1) 
                     : (item.likes || 0) + 1,
                 }
               : item
           )
         );
 
-        toast({
-          title: isCurrentlyLiked ? "Like removed" : "Article liked",
-          description: isCurrentlyLiked ? 
-            "You unliked this article." : 
-            "You liked this article! Sign up to save your likes permanently.",
-        });
-        return;
+        return; // Exit early for guest users
       }
 
       // Handle authenticated user likes with database
-      const { data: currentlyLiked } = await supabase
-        .rpc('user_liked_news', { 
-          news_article_id: newsId, 
-          user_uuid: user.id 
-        });
+      let currentlyLiked = false;
+      
+      // Check current like status using direct query (fallback if function fails)
+      try {
+        const { data: userLikedData } = await supabase
+          .rpc('user_liked_news', { 
+            news_article_id: newsId, 
+            user_uuid: user.id 
+          });
+        currentlyLiked = userLikedData || false;
+      } catch (err) {
+        // Fallback: check directly from likes table
+        const { data: existingLike } = await supabase
+          .from('likes')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('news_id', newsId)
+          .maybeSingle();
+        currentlyLiked = !!existingLike;
+      }
 
       if (currentlyLiked) {
         // Remove like
@@ -258,9 +267,19 @@ export const HomePage = () => {
         if (error) throw error;
       }
 
-      // Get updated like count from database
-      const { data: newLikeCount } = await supabase
-        .rpc('get_news_likes_count', { news_article_id: newsId });
+      // Get updated like count (with fallback)
+      let newLikeCount = 0;
+      try {
+        const { data: likesData } = await supabase
+          .rpc('get_news_likes_count', { news_article_id: newsId });
+        newLikeCount = likesData || 0;
+      } catch (err) {
+        // Fallback: calculate from current state
+        const currentItem = news.find(item => item.id === newsId);
+        newLikeCount = currentlyLiked 
+          ? Math.max(0, (currentItem?.likes_count || 0) - 1)
+          : (currentItem?.likes_count || 0) + 1;
+      }
 
       // Update local state with actual database values
       setNews(prevNews =>
@@ -269,19 +288,15 @@ export const HomePage = () => {
             ? {
                 ...item,
                 user_liked: !currentlyLiked,
-                likes_count: newLikeCount || 0,
+                likes_count: newLikeCount,
                 // For sample data compatibility
                 isLiked: !currentlyLiked,
-                likes: newLikeCount || 0,
+                likes: newLikeCount,
               }
             : item
         )
       );
 
-      toast({
-        title: currentlyLiked ? "Like removed" : "Article liked",
-        description: currentlyLiked ? "You unliked this article." : "You liked this article!",
-      });
     } catch (error) {
       console.error('Error handling like:', error);
       toast({
