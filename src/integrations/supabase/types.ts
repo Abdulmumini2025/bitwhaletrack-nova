@@ -154,6 +154,14 @@ export type Database = {
           last_name: string
         }[]
       }
+      get_news_likes_count: {
+        Args: { news_article_id: string }
+        Returns: number
+      }
+      user_liked_news: {
+        Args: { news_article_id: string; user_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
       news_category: "bitcoin" | "altcoins" | "market_trends" | "regulation"

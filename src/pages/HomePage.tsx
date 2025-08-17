@@ -104,6 +104,9 @@ export const HomePage = () => {
 
   const fetchNews = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // First get news without the foreign key constraint issues
       const { data, error } = await supabase
         .from('news')
         .select('*')
@@ -113,21 +116,55 @@ export const HomePage = () => {
 
       if (error) throw error;
 
-      // Transform the data to match our component expectations
-      const transformedNews: NewsArticle[] = data?.map((article) => ({
-        id: article.id,
-        title: article.title,
-        content: article.content,
-        category: article.category,
-        image_url: article.image_url,
-        author_id: article.author_id,
-        created_at: article.created_at,
-        profiles: null, // Will be populated later
-        likes_count: 0,
-        user_liked: false
-      })) || [];
+      // Get like counts and user like status for each article
+      const newsWithLikes = await Promise.all(
+        (data || []).map(async (article) => {
+          // Get author info separately
+          const { data: authorData } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', article.author_id)
+            .single();
+          
+          // Get total likes count
+          const { data: likesData } = await supabase
+            .rpc('get_news_likes_count', { news_article_id: article.id });
+          
+          // Check if current user liked this article
+          let userLiked = false;
+          if (user) {
+            const { data: userLikedData } = await supabase
+              .rpc('user_liked_news', { 
+                news_article_id: article.id, 
+                user_uuid: user.id 
+              });
+            userLiked = userLikedData || false;
+          }
 
-      setNews(transformedNews);
+          return {
+            id: article.id,
+            title: article.title,
+            content: article.content,
+            category: article.category,
+            image_url: article.image_url,
+            author_id: article.author_id,
+            created_at: article.created_at,
+            profiles: authorData ? {
+              first_name: authorData.first_name,
+              last_name: authorData.last_name
+            } : null,
+            likes_count: likesData || 0,
+            user_liked: userLiked,
+            // For compatibility with NewsCard component
+            likes: likesData || 0,
+            isLiked: userLiked,
+            author: authorData ? `${authorData.first_name} ${authorData.last_name}` : 'Unknown',
+            publishedAt: article.created_at
+          };
+        })
+      );
+
+      setNews(newsWithLikes);
     } catch (error) {
       console.error('Error fetching news:', error);
       // Use sample data as fallback
@@ -150,56 +187,57 @@ export const HomePage = () => {
         return;
       }
 
-      // Check if user already liked this article
-      const { data: existingLike } = await supabase
-        .from('likes')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('news_id', newsId)
-        .single();
+      // Get current like status
+      const { data: currentlyLiked } = await supabase
+        .rpc('user_liked_news', { 
+          news_article_id: newsId, 
+          user_uuid: user.id 
+        });
 
-      const isCurrentlyLiked = !!existingLike;
-
-      if (isCurrentlyLiked) {
+      if (currentlyLiked) {
         // Remove like
-        await supabase
+        const { error } = await supabase
           .from('likes')
           .delete()
           .eq('user_id', user.id)
           .eq('news_id', newsId);
+        
+        if (error) throw error;
       } else {
         // Add like
-        await supabase
+        const { error } = await supabase
           .from('likes')
           .insert({
             user_id: user.id,
             news_id: newsId,
           });
+        
+        if (error) throw error;
       }
 
-      // Update local state - toggle the current state
+      // Get updated like count
+      const { data: newLikeCount } = await supabase
+        .rpc('get_news_likes_count', { news_article_id: newsId });
+
+      // Update local state with actual database values
       setNews(prevNews =>
         prevNews.map(item =>
           item.id === newsId
             ? {
                 ...item,
-                user_liked: !isCurrentlyLiked,
-                likes_count: isCurrentlyLiked 
-                  ? (item.likes_count || 0) - 1 
-                  : (item.likes_count || 0) + 1,
+                user_liked: !currentlyLiked,
+                likes_count: newLikeCount || 0,
                 // For sample data compatibility
-                isLiked: !isCurrentlyLiked,
-                likes: isCurrentlyLiked 
-                  ? (item.likes || 0) - 1 
-                  : (item.likes || 0) + 1,
+                isLiked: !currentlyLiked,
+                likes: newLikeCount || 0,
               }
             : item
         )
       );
 
       toast({
-        title: isCurrentlyLiked ? "Like removed" : "Article liked",
-        description: isCurrentlyLiked ? "You unliked this article." : "You liked this article!",
+        title: currentlyLiked ? "Like removed" : "Article liked",
+        description: currentlyLiked ? "You unliked this article." : "You liked this article!",
       });
     } catch (error) {
       console.error('Error handling like:', error);
