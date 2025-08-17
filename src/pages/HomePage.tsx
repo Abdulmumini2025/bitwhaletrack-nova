@@ -105,6 +105,7 @@ export const HomePage = () => {
   const fetchNews = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      const guestLikes = JSON.parse(localStorage.getItem('guestLikes') || '{}');
       
       // First get news without the foreign key constraint issues
       const { data, error } = await supabase
@@ -124,7 +125,7 @@ export const HomePage = () => {
             .from('profiles')
             .select('first_name, last_name')
             .eq('user_id', article.author_id)
-            .single();
+            .maybeSingle();
           
           // Get total likes count
           const { data: likesData } = await supabase
@@ -139,6 +140,15 @@ export const HomePage = () => {
                 user_uuid: user.id 
               });
             userLiked = userLikedData || false;
+          } else {
+            // Check guest likes from localStorage
+            userLiked = guestLikes[article.id] || false;
+          }
+
+          // Calculate display likes (database likes + guest likes if not authenticated)
+          let displayLikes = likesData || 0;
+          if (!user && guestLikes[article.id]) {
+            displayLikes += 1; // Add guest like to display count
           }
 
           return {
@@ -153,10 +163,10 @@ export const HomePage = () => {
               first_name: authorData.first_name,
               last_name: authorData.last_name
             } : null,
-            likes_count: likesData || 0,
+            likes_count: displayLikes,
             user_liked: userLiked,
             // For compatibility with NewsCard component
-            likes: likesData || 0,
+            likes: displayLikes,
             isLiked: userLiked,
             author: authorData ? `${authorData.first_name} ${authorData.last_name}` : 'Unknown',
             publishedAt: article.created_at
@@ -179,15 +189,48 @@ export const HomePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        // Handle anonymous likes with localStorage
+        const guestLikes = JSON.parse(localStorage.getItem('guestLikes') || '{}');
+        const isCurrentlyLiked = guestLikes[newsId] || false;
+        
+        // Toggle like status in localStorage
+        if (isCurrentlyLiked) {
+          delete guestLikes[newsId];
+        } else {
+          guestLikes[newsId] = true;
+        }
+        localStorage.setItem('guestLikes', JSON.stringify(guestLikes));
+        
+        // Update local state for guest user
+        setNews(prevNews =>
+          prevNews.map(item =>
+            item.id === newsId
+              ? {
+                  ...item,
+                  user_liked: !isCurrentlyLiked,
+                  likes_count: isCurrentlyLiked 
+                    ? (item.likes_count || 0) - 1 
+                    : (item.likes_count || 0) + 1,
+                  // For sample data compatibility
+                  isLiked: !isCurrentlyLiked,
+                  likes: isCurrentlyLiked 
+                    ? (item.likes || 0) - 1 
+                    : (item.likes || 0) + 1,
+                }
+              : item
+          )
+        );
+
         toast({
-          title: "Authentication required",
-          description: "Please log in to like articles.",
-          variant: "destructive",
+          title: isCurrentlyLiked ? "Like removed" : "Article liked",
+          description: isCurrentlyLiked ? 
+            "You unliked this article." : 
+            "You liked this article! Sign up to save your likes permanently.",
         });
         return;
       }
 
-      // Get current like status
+      // Handle authenticated user likes with database
       const { data: currentlyLiked } = await supabase
         .rpc('user_liked_news', { 
           news_article_id: newsId, 
@@ -215,7 +258,7 @@ export const HomePage = () => {
         if (error) throw error;
       }
 
-      // Get updated like count
+      // Get updated like count from database
       const { data: newLikeCount } = await supabase
         .rpc('get_news_likes_count', { news_article_id: newsId });
 
