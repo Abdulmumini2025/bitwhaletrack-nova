@@ -158,7 +158,9 @@ export const HomePage = () => {
         .eq('news_id', newsId)
         .single();
 
-      if (existingLike) {
+      const isCurrentlyLiked = !!existingLike;
+
+      if (isCurrentlyLiked) {
         // Remove like
         await supabase
           .from('likes')
@@ -175,27 +177,37 @@ export const HomePage = () => {
           });
       }
 
-      // Update local state
+      // Update local state - toggle the current state
       setNews(prevNews =>
         prevNews.map(item =>
           item.id === newsId
             ? {
                 ...item,
-                user_liked: !item.user_liked,
-                likes_count: item.user_liked 
+                user_liked: !isCurrentlyLiked,
+                likes_count: isCurrentlyLiked 
                   ? (item.likes_count || 0) - 1 
                   : (item.likes_count || 0) + 1,
                 // For sample data compatibility
-                isLiked: !item.user_liked,
-                likes: item.user_liked 
+                isLiked: !isCurrentlyLiked,
+                likes: isCurrentlyLiked 
                   ? (item.likes || 0) - 1 
                   : (item.likes || 0) + 1,
               }
             : item
         )
       );
+
+      toast({
+        title: isCurrentlyLiked ? "Like removed" : "Article liked",
+        description: isCurrentlyLiked ? "You unliked this article." : "You liked this article!",
+      });
     } catch (error) {
       console.error('Error handling like:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update like. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

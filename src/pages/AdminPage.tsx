@@ -143,11 +143,13 @@ export const AdminPage = () => {
         variant: "destructive",
       });
     } else {
+      const actionText = newRole === 'admin' ? 'promoted to Admin' : 
+                        newRole === 'super_admin' ? 'promoted to Super Admin' : 'demoted to User';
       toast({
-        title: "Success",
-        description: "User role updated successfully.",
+        title: "Role Updated",
+        description: `User successfully ${actionText}.`,
       });
-      loadUsers();
+      loadUsers(); // Refresh the user list
     }
   };
 
