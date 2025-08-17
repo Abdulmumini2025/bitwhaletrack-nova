@@ -147,7 +147,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_author_name: {
+        Args: { author_user_id: string }
+        Returns: {
+          first_name: string
+          last_name: string
+        }[]
+      }
     }
     Enums: {
       news_category: "bitcoin" | "altcoins" | "market_trends" | "regulation"
