@@ -166,9 +166,10 @@ export const AuthPage = () => {
       console.log("Verifying OTP:", formData.otpCode, "for email:", formData.email);
       
       // For password reset OTP, we use verifyOtp with type 'recovery'
+      const sanitizedToken = String(formData.otpCode || "").replace(/\D/g, "").slice(0, 6);
       const { error } = await supabase.auth.verifyOtp({
         email: formData.email,
-        token: formData.otpCode,
+        token: sanitizedToken,
         type: 'recovery' // Use recovery type for password reset
       });
 
