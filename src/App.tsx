@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { NewsRealtimeToasts } from "@/components/NewsRealtimeToasts";
 import Index from "./pages/Index";
 import { AuthPage } from "./pages/AuthPage";
 import { AboutPage } from "./pages/AboutPage";
@@ -24,6 +25,7 @@ function App() {
         <Sonner />
         <BrowserRouter>
           <Header />
+          <NewsRealtimeToasts />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/admin-login" element={<AdminLoginPage />} />
