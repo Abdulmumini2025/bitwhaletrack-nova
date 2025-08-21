@@ -67,6 +67,8 @@ const categoryDisplayToKey: Record<string, string> = {
   Regulation: "regulation",
   Airdrop: "airdrop",
 };
+const normalizeCategory = (value: string) =>
+  (value || "").toLowerCase().replace(/\s+/g, "_");
 
 type NewsArticle = {
   id: string;
@@ -105,7 +107,13 @@ export const HomePage = () => {
     if (selectedCategory === "All") {
       setFilteredNews(news);
     } else {
-      setFilteredNews(news.filter(item => item.category === categoryDisplayToKey[selectedCategory]));
+      const key = categoryDisplayToKey[selectedCategory];
+      setFilteredNews(
+        news.filter((item) =>
+          normalizeCategory(item.category) === key ||
+          normalizeCategory(item.category) === normalizeCategory(selectedCategory)
+        )
+      );
     }
   }, [selectedCategory, news]);
 
