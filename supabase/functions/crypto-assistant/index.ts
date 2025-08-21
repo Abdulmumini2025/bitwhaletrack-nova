@@ -5,6 +5,7 @@
 // GET /coin?symbol=BTC|id=bitcoin&source=coingecko|binance|all
 // GET /search?q=bitcoin|btc   -> fuzzy match across all coins (CoinGecko)
 // GET /coin/details?q=bitcoin|btc or /coin/details?id=bitcoin  -> rich details
+// GET /coin/verify?q=bitcoin|btc or /coin/verify?id=bitcoin -> existence and live status across sources
 // GET /news?q=bitcoin&symbols=bitcoin,ethereum
 // POST /advisor { budget:number, currency?:string, risk?:'low'|'medium'|'high' }
 // Env: OPENAI_API_KEY, COINGECKO_API_KEY (optional), BINANCE_API_KEY (optional), BINANCE_API_SECRET (optional)
@@ -78,6 +79,19 @@ async function getCoinGeckoListCached(): Promise<{ id: string; symbol: string; n
   const data = await listCoinGeckoCoins();
   COINGECKO_LIST_CACHE = { data, ts: now };
   return data;
+}
+
+// Simple in-memory cache for Binance base asset list
+let BINANCE_ASSET_CACHE: { data: Set<string>; ts: number } | null = null;
+async function getBinanceAssetsCached(): Promise<Set<string>> {
+  const now = Date.now();
+  if (BINANCE_ASSET_CACHE && now - BINANCE_ASSET_CACHE.ts < 5 * 60 * 1000) {
+    return BINANCE_ASSET_CACHE.data;
+  }
+  const assets = await listBinanceAssets();
+  const set = new Set(assets.map((a) => a.symbol.toUpperCase()));
+  BINANCE_ASSET_CACHE = { data: set, ts: now };
+  return set;
 }
 
 async function getCoinGeckoMarket(ids: string[]): Promise<any[]> {
@@ -207,7 +221,7 @@ async function handleCoin(url: URL) {
   if (source === "coingecko" || source === "all") {
     const ids: string[] = [];
     if (id) ids.push(id);
-    // Best-effort symbol->id: download list and match first occurrence
+    // Best-effort symbol->id via resolver
     if (!id && (symbol || q)) {
       const resolved = await resolveCoinGeckoId(symbol || q);
       if (resolved.id) ids.push(resolved.id);
@@ -215,6 +229,17 @@ async function handleCoin(url: URL) {
     const markets = await getCoinGeckoMarket(ids);
     responses.coingecko = markets?.[0] ?? null;
   }
+
+  // Existence flags
+  const exists_coingecko = Boolean(responses.coingecko);
+  let exists_binance = false;
+  if (symbol) {
+    const aset = await getBinanceAssetsCached();
+    exists_binance = aset.has(symbol.toUpperCase());
+  }
+  responses.exists = exists_coingecko || exists_binance;
+  responses.exists_coingecko = exists_coingecko;
+  responses.exists_binance = exists_binance;
 
   return json(responses);
 }
@@ -281,6 +306,60 @@ async function handleCoinDetails(url: URL) {
   }
 
   return json({ ...payload, summary });
+}
+
+async function handleVerify(url: URL) {
+  const id = url.searchParams.get("id")?.toLowerCase() || "";
+  const q = url.searchParams.get("q") || "";
+  const symbolParam = url.searchParams.get("symbol") || "";
+
+  let resolvedId = id;
+  let candidates: any[] = [];
+  if (!resolvedId && (q || symbolParam)) {
+    const resolved = await resolveCoinGeckoId(q || symbolParam);
+    if (resolved.id) resolvedId = resolved.id;
+    else candidates = resolved.candidates || [];
+  }
+
+  const coingecko_list = await getCoinGeckoListCached();
+  const in_coingecko = resolvedId ? coingecko_list.some((c) => c.id === resolvedId) : false;
+
+  let market: any = null;
+  if (resolvedId) {
+    const mk = await getCoinGeckoMarket([resolvedId]);
+    market = mk?.[0] || null;
+  }
+
+  let exists_binance = false;
+  if (symbolParam) {
+    const aset = await getBinanceAssetsCached();
+    exists_binance = aset.has(symbolParam.toUpperCase());
+  } else if (market?.symbol) {
+    const aset = await getBinanceAssetsCached();
+    exists_binance = aset.has(String(market.symbol || "").toUpperCase());
+  }
+
+  const exists = Boolean(in_coingecko || exists_binance || market);
+  return json({
+    query: q || symbolParam || id,
+    id: resolvedId || null,
+    exists,
+    sources: {
+      coingecko: Boolean(in_coingecko),
+      binance_asset: Boolean(exists_binance),
+    },
+    market: market
+      ? {
+          id: market.id,
+          symbol: String(market.symbol || "").toUpperCase(),
+          name: market.name,
+          price: market.current_price,
+          market_cap: market.market_cap,
+          last_updated: market.last_updated,
+        }
+      : null,
+    candidates,
+  });
 }
 
 async function handleNews(url: URL) {
@@ -416,6 +495,9 @@ Deno.serve(async (req: Request) => {
     }
     if (url.pathname.endsWith("/coin/details") && req.method === "GET") {
       return await handleCoinDetails(url);
+    }
+    if (url.pathname.endsWith("/coin/verify") && req.method === "GET") {
+      return await handleVerify(url);
     }
     if (url.pathname.endsWith("/news") && req.method === "GET") {
       return await handleNews(url);
