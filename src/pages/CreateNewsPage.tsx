@@ -111,14 +111,14 @@ export const CreateNewsPage = () => {
           category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation',
           image_url: finalImageUrl || null,
           author_id: user.id,
-          status: 'pending' as const,
+          status: 'approved' as const,
         });
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Your article has been submitted for review!",
+        description: "Your article is live!",
       });
 
       navigate('/');
