@@ -1,73 +1,49 @@
-# Welcome to your Lovable project
+# Bitwhaletrack — Cryptocurrency News Platform
 
-## Project info
+A modern crypto news platform built with Vite, React, TypeScript, Tailwind, and Supabase.
 
-**URL**: https://lovable.dev/projects/fd5ff51b-81ee-4bbf-aede-b40d607615e5
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/fd5ff51b-81ee-4bbf-aede-b40d607615e5) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Quick start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1) Install dependencies
+npm ci
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2) Configure environment
+cp .env.example .env
+# Edit .env with your Supabase project URL and anon key
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3) Run locally
 npm run dev
+
+# 4) Lint and build
+npm run lint
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+## Environment variables
+Create a `.env` file at the project root:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
 
-**Use GitHub Codespaces**
+Notes:
+- Never commit real secrets. The Supabase anon key is public for client apps, but still keep it outside source code via envs.
+- Production deployments should set these as environment variables in the host platform.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Security
+- No raw SQL is used directly; Supabase client APIs prevent SQL injection.
+- Avoid `dangerouslySetInnerHTML` to reduce XSS risk. Sanitize any user-provided content before rendering.
+- API keys are loaded from environment variables and not hardcoded in the repo.
 
-## What technologies are used for this project?
+## Scripts
+- `npm run dev`: Start the development server
+- `npm run lint`: Run ESLint
+- `npm run build`: Create a production build
+- `npm run preview`: Preview the production build
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/fd5ff51b-81ee-4bbf-aede-b40d607615e5) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Tech stack
+- React + TypeScript + Vite
+- Tailwind CSS + shadcn/ui
+- Supabase (Auth, DB, Storage)
