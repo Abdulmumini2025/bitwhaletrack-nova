@@ -24,6 +24,7 @@ export const CreateNewsPage = () => {
     { value: 'altcoins', label: 'Altcoin News' },
     { value: 'market_trends', label: 'Market Trends' },
     { value: 'regulation', label: 'Regulation Updates' },
+    { value: 'airdrop', label: 'Airdrop' },
   ];
 
   useEffect(() => {
@@ -108,7 +109,7 @@ export const CreateNewsPage = () => {
         .insert({
           title,
           content,
-          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation',
+          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation' | 'airdrop',
           image_url: finalImageUrl || null,
           author_id: user.id,
           status: 'approved' as const,

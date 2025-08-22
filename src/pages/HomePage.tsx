@@ -59,7 +59,14 @@ const sampleNews = [
   },
 ];
 
-const categories = ["All", "Bitcoin", "Altcoins", "Market Trends", "Regulation"];
+const categories = ["All", "Bitcoin", "Altcoins", "Market Trends", "Regulation", "Airdrop"];
+const categoryDisplayToKey: Record<string, string> = {
+  Bitcoin: "bitcoin",
+  Altcoins: "altcoins",
+  "Market Trends": "market_trends",
+  Regulation: "regulation",
+  Airdrop: "airdrop",
+};
 
 type NewsArticle = {
   id: string;
@@ -98,7 +105,7 @@ export const HomePage = () => {
     if (selectedCategory === "All") {
       setFilteredNews(news);
     } else {
-      setFilteredNews(news.filter(item => item.category === selectedCategory));
+      setFilteredNews(news.filter(item => item.category === categoryDisplayToKey[selectedCategory]));
     }
   }, [selectedCategory, news]);
 
