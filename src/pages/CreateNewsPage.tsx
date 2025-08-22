@@ -24,7 +24,6 @@ export const CreateNewsPage = () => {
     { value: 'altcoins', label: 'Altcoin News' },
     { value: 'market_trends', label: 'Market Trends' },
     { value: 'regulation', label: 'Regulation Updates' },
-    { value: 'airdrop', label: 'Airdrop' },
   ];
 
   useEffect(() => {
@@ -109,17 +108,17 @@ export const CreateNewsPage = () => {
         .insert({
           title,
           content,
-          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation' | 'airdrop',
+          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation',
           image_url: finalImageUrl || null,
           author_id: user.id,
-          status: 'approved' as const,
+          status: 'pending' as const,
         });
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Your article is live!",
+        description: "Your article has been submitted for review!",
       });
 
       navigate('/');

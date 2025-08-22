@@ -27,7 +27,6 @@ export const AdminNewsForm = ({ onSuccess }: AdminNewsFormProps) => {
     { value: 'altcoins', label: 'Altcoin News' },
     { value: 'market_trends', label: 'Market Trends' },
     { value: 'regulation', label: 'Regulation Updates' },
-    { value: 'airdrop', label: 'Airdrop' },
   ];
 
   const uploadImage = async (file: File): Promise<string | null> => {
@@ -94,7 +93,7 @@ export const AdminNewsForm = ({ onSuccess }: AdminNewsFormProps) => {
         .insert({
           title,
           content,
-          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation' | 'airdrop',
+          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation',
           image_url: finalImageUrl || null,
           author_id: user.id,
           status: 'approved' as const,

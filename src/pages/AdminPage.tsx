@@ -43,9 +43,6 @@ interface ContactMessage {
 }
 
 export const AdminPage = () => {
-  const [createAdminEmail, setCreateAdminEmail] = useState("");
-  const [createAdminPassword, setCreateAdminPassword] = useState("");
-  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -176,35 +173,6 @@ export const AdminPage = () => {
         description: `User ${!isBlocked ? 'blocked' : 'unblocked'} successfully.`,
       });
       loadUsers();
-    }
-  };
-
-  const createAdminAccount = async () => {
-    if (!createAdminEmail) {
-      toast({ title: "Email required", description: "Please enter an email.", variant: "destructive" });
-      return;
-    }
-    setIsCreatingAdmin(true);
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-create-user`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          // Pass the current session JWT for role check in the function
-          'authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
-        },
-        body: JSON.stringify({ email: createAdminEmail, password: createAdminPassword || undefined, role: 'admin' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to create admin');
-      toast({ title: 'Admin created', description: `Invited: ${createAdminEmail}` });
-      setCreateAdminEmail("");
-      setCreateAdminPassword("");
-      await loadUsers();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || String(err), variant: 'destructive' });
-    } finally {
-      setIsCreatingAdmin(false);
     }
   };
 
@@ -404,31 +372,6 @@ export const AdminPage = () => {
                 </p>
               </CardHeader>
               <CardContent>
-                {userRole === 'super_admin' && (
-                  <div className="mb-6 p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-2">Create Admin</h4>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <input
-                        type="email"
-                        placeholder="Admin email"
-                        value={createAdminEmail}
-                        onChange={(e) => setCreateAdminEmail(e.target.value)}
-                        className="border rounded-md px-3 py-2 w-full md:w-auto"
-                      />
-                      <input
-                        type="password"
-                        placeholder="Temporary password (optional)"
-                        value={createAdminPassword}
-                        onChange={(e) => setCreateAdminPassword(e.target.value)}
-                        className="border rounded-md px-3 py-2 w-full md:w-auto"
-                      />
-                      <Button onClick={createAdminAccount} disabled={isCreatingAdmin}>
-                        {isCreatingAdmin ? 'Creating...' : 'Create Admin'}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">If password is omitted, an email link can be used by the user to set a password.</p>
-                  </div>
-                )}
                 <div className="space-y-4">
                   {users.map((user) => (
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
