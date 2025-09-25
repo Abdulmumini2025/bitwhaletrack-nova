@@ -83,6 +83,6 @@ Deno.serve(async (req) => {
     return json({ ok: true, user_id: created.user.id, email, role });
   } catch (err) {
     console.error('admin-create-user error', err);
-    return json({ error: String(err?.message || err) }, 500);
+    return json({ error: String((err as any)?.message || err) }, 500);
   }
 });

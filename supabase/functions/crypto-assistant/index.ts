@@ -508,6 +508,6 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Not found" }, 404);
   } catch (err) {
     console.error("crypto-assistant error:", err);
-    return json({ error: String(err?.message || err) }, 500);
+    return json({ error: String((err as any)?.message || err) }, 500);
   }
 });

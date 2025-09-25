@@ -109,7 +109,7 @@ export const CreateNewsPage = () => {
         .insert({
           title,
           content,
-          category: category as 'bitcoin' | 'altcoins' | 'market_trends' | 'regulation' | 'airdrop',
+          category: category as any,
           image_url: finalImageUrl || null,
           author_id: user.id,
           status: 'approved' as const,

@@ -168,7 +168,12 @@ export type Database = {
       }
     }
     Enums: {
-      news_category: "bitcoin" | "altcoins" | "market_trends" | "regulation"
+      news_category:
+        | "bitcoin"
+        | "altcoins"
+        | "market_trends"
+        | "regulation"
+        | "airdrop"
       news_status: "pending" | "approved" | "rejected"
       user_role: "user" | "admin" | "super_admin"
     }
@@ -298,7 +303,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      news_category: ["bitcoin", "altcoins", "market_trends", "regulation"],
+      news_category: [
+        "bitcoin",
+        "altcoins",
+        "market_trends",
+        "regulation",
+        "airdrop",
+      ],
       news_status: ["pending", "approved", "rejected"],
       user_role: ["user", "admin", "super_admin"],
     },
