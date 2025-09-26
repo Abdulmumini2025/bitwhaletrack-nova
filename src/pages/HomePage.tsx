@@ -172,7 +172,6 @@ export const HomePage = () => {
 
           // Get author info from profiles
           let authorName = 'Crypto News Team';
-          let authorRole = 'user';
           if (article.author_id) {
             try {
               const { data: profile } = await supabase
@@ -182,8 +181,15 @@ export const HomePage = () => {
                 .single();
               
               if (profile) {
-                authorName = `${profile.first_name} ${profile.last_name}`;
-                authorRole = profile.role;
+                // Display based on role
+                if (profile.role === 'super_admin') {
+                  authorName = 'Super Admin';
+                } else if (profile.role === 'admin') {
+                  authorName = 'Admin';
+                } else {
+                  // For regular users, show first name only
+                  authorName = profile.first_name;
+                }
               }
             } catch (err) {
               console.log('Error getting author profile:', err);
@@ -204,7 +210,7 @@ export const HomePage = () => {
             // For compatibility with NewsCard component  
             likes: displayLikes,
             isLiked: userLiked,
-            author: `${authorName} (${authorRole})`,
+            author: authorName,
             publishedAt: article.created_at
           };
         })

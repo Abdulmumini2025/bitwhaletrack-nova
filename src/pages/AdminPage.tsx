@@ -490,7 +490,13 @@ export const AdminPage = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold">{item.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          By: {item.profiles?.first_name || 'Unknown'} {item.profiles?.last_name || 'User'} ({item.profiles?.role || 'user'}) | 
+                          By: {(() => {
+                            if (!item.profiles) return 'Unknown User';
+                            const role = item.profiles.role;
+                            if (role === 'super_admin') return 'Super Admin';
+                            if (role === 'admin') return 'Admin';
+                            return item.profiles.first_name; // Regular user - first name only
+                          })()} | 
                           Category: {item.category} | 
                           Status: {item.status}
                         </p>
