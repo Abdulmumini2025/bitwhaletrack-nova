@@ -30,6 +30,7 @@ interface NewsItem {
   profiles: {
     first_name: string;
     last_name: string;
+    role: string;
   } | null;
 }
 
@@ -110,7 +111,7 @@ export const AdminPage = () => {
       .from('news')
       .select(`
         *,
-        profiles!inner (first_name, last_name)
+        profiles (first_name, last_name, role)
       `)
       .order('created_at', { ascending: false });
 
@@ -489,7 +490,7 @@ export const AdminPage = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold">{item.title}</h3>
                         <p className="text-sm text-muted-foreground">
-                          By: {item.profiles?.first_name || 'Unknown'} {item.profiles?.last_name || 'User'} | 
+                          By: {item.profiles?.first_name || 'Unknown'} {item.profiles?.last_name || 'User'} ({item.profiles?.role || 'user'}) | 
                           Category: {item.category} | 
                           Status: {item.status}
                         </p>
@@ -503,33 +504,35 @@ export const AdminPage = () => {
                           {item.status}
                         </Badge>
                       </div>
-                      <div className="flex space-x-2">
-                        {item.status === 'pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => updateNewsStatus(item.id, 'approved')}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateNewsStatus(item.id, 'rejected')}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteNews(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                       <div className="flex space-x-2">
+                         {item.status === 'pending' && (
+                           <>
+                             <Button
+                               size="sm"
+                               variant="default"
+                               onClick={() => updateNewsStatus(item.id, 'approved')}
+                             >
+                               <Check className="h-4 w-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="destructive"
+                               onClick={() => updateNewsStatus(item.id, 'rejected')}
+                             >
+                               <X className="h-4 w-4" />
+                             </Button>
+                           </>
+                         )}
+                         {item.status === 'approved' && (
+                           <Button
+                             size="sm"
+                             variant="destructive"
+                             onClick={() => updateNewsStatus(item.id, 'rejected')}
+                           >
+                             Reject
+                           </Button>
+                         )}
+                       </div>
                     </div>
                   ))}
                 </div>

@@ -81,6 +81,7 @@ type NewsArticle = {
   profiles?: {
     first_name: string;
     last_name: string;
+    role?: string;
   } | null;
   likes_count?: number;
   user_liked?: boolean;
@@ -122,7 +123,7 @@ export const HomePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       const guestLikes = JSON.parse(localStorage.getItem('guestLikes') || '{}');
       
-      // Simplified fetch without profile joins to avoid RLS issues
+      // Get news without profile joins first
       const { data, error } = await supabase
         .from('news')
         .select('*')
@@ -136,7 +137,7 @@ export const HomePage = () => {
       const newsWithLikes = await Promise.all(
         (data || []).map(async (article) => {
           // Get like count using our function
-          let likesCount = 0;
+          let likesCount = 0;  
           try {
             const { data: likesData } = await supabase
               .rpc('get_news_likes_count', { news_article_id: article.id });
@@ -148,7 +149,7 @@ export const HomePage = () => {
           // Check if current user liked this article
           let userLiked = false;
           if (user) {
-            try {
+            try {  
               const { data: userLikedData } = await supabase
                 .rpc('user_liked_news', { 
                   news_article_id: article.id, 
@@ -169,6 +170,26 @@ export const HomePage = () => {
             displayLikes += 1; // Add guest like to display count
           }
 
+          // Get author info from profiles
+          let authorName = 'Crypto News Team';
+          let authorRole = 'user';
+          if (article.author_id) {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, role')
+                .eq('user_id', article.author_id)
+                .single();
+              
+              if (profile) {
+                authorName = `${profile.first_name} ${profile.last_name}`;
+                authorRole = profile.role;
+              }
+            } catch (err) {
+              console.log('Error getting author profile:', err);
+            }
+          }
+
           return {
             id: article.id,
             title: article.title,
@@ -177,13 +198,13 @@ export const HomePage = () => {
             image_url: article.image_url,
             author_id: article.author_id,
             created_at: article.created_at,
-            profiles: null, // We'll handle this separately if needed
+            profiles: null,
             likes_count: displayLikes,
             user_liked: userLiked,
-            // For compatibility with NewsCard component
+            // For compatibility with NewsCard component  
             likes: displayLikes,
             isLiked: userLiked,
-            author: 'Crypto News Team', // Default author for now
+            author: `${authorName} (${authorRole})`,
             publishedAt: article.created_at
           };
         })
@@ -426,9 +447,7 @@ export const HomePage = () => {
                 const excerpt = content ? content.substring(0, 150) + "..." : "";
                 const category = article.category;
                 const imageUrl = ('image_url' in article ? article.image_url : (article as any).image) || "/placeholder.svg";
-                const author = article.profiles 
-                  ? `${article.profiles.first_name} ${article.profiles.last_name}`
-                  : (article as any).author || "Unknown Author";
+                const author = (article as any).author || "Unknown Author";
                 const publishedAt = 'created_at' in article ? article.created_at : (article as any).publishedAt;
                 const likes = article.likes_count || (article as any).likes || 0;
                 const isLiked = article.user_liked || (article as any).isLiked || false;
