@@ -174,14 +174,11 @@ export const HomePage = () => {
           let authorName = 'Crypto News Team';
           if (article.author_id) {
             try {
-              console.log('Fetching profile for author_id:', article.author_id);
               const { data: profile, error } = await supabase
                 .from('profiles')
                 .select('first_name, last_name, role')
                 .eq('user_id', article.author_id)
                 .single();
-              
-              console.log('Profile fetch result:', { profile, error });
               
               if (profile) {
                 // Display based on role
@@ -193,7 +190,6 @@ export const HomePage = () => {
                   // For regular users, show first name only
                   authorName = profile.first_name;
                 }
-                console.log('Set author name to:', authorName);
               }
             } catch (err) {
               console.log('Error getting author profile:', err);
