@@ -498,7 +498,7 @@ export const AdminPage = () => {
               <CardHeader>
                 <CardTitle>News Management</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Manage all news articles submitted by users. Approve or reject pending articles.
+                  All submitted news is automatically approved. You can reject articles if they violate community guidelines.
                 </p>
               </CardHeader>
               <CardContent>
@@ -533,10 +533,7 @@ export const AdminPage = () => {
                             })()} | 
                             Category: {item.category.replace(/_/g, ' ')} | 
                             Status: <Badge 
-                              variant={
-                                item.status === 'approved' ? 'default' : 
-                                item.status === 'pending' ? 'secondary' : 'destructive'
-                              }
+                              variant={item.status === 'approved' ? 'default' : 'destructive'}
                               className="ml-1"
                             >
                               {item.status}
@@ -547,35 +544,14 @@ export const AdminPage = () => {
                           </p>
                         </div>
                         <div className="flex space-x-2 ml-4">
-                          {item.status === 'pending' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => updateNewsStatus(item.id, 'approved')}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <Check className="h-4 w-4" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => updateNewsStatus(item.id, 'rejected')}
-                              >
-                                <X className="h-4 w-4" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
                           {item.status === 'approved' && (
                             <Button
                               size="sm"
                               variant="destructive"
                               onClick={() => updateNewsStatus(item.id, 'rejected')}
                             >
-                              <X className="h-4 w-4" />
-                              Reject
+                              <X className="h-4 w-4 mr-1" />
+                              Reject Post
                             </Button>
                           )}
                           {item.status === 'rejected' && (
@@ -585,8 +561,8 @@ export const AdminPage = () => {
                               onClick={() => updateNewsStatus(item.id, 'approved')}
                               className="bg-green-600 hover:bg-green-700"
                             >
-                              <Check className="h-4 w-4" />
-                              Approve
+                              <Check className="h-4 w-4 mr-1" />
+                              Restore Post
                             </Button>
                           )}
                         </div>
