@@ -24,9 +24,12 @@ interface NewsItem {
   title: string;
   content: string;
   category: string;
-  status: 'pending' | 'approved' | 'rejected';
+  image_url?: string;
   author_id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  is_breaking: boolean;
   created_at: string;
+  updated_at: string;
   profiles: {
     first_name: string;
     last_name: string;
@@ -94,31 +97,43 @@ export const AdminPage = () => {
   };
 
   const loadUsers = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error loading users:', error);
-    } else {
-      setUsers(data || []);
+      if (error) {
+        console.error('Error loading users:', error);
+        setUsers([]);
+      } else {
+        setUsers(data || []);
+      }
+    } catch (err) {
+      console.error('Exception loading users:', err);
+      setUsers([]);
     }
   };
 
   const loadNews = async () => {
-    const { data, error } = await supabase
-      .from('news')
-      .select(`
-        *,
-        profiles (first_name, last_name, role)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error loading news:', error);
-    } else {
-      setNews((data || []) as any);
+    try {
+      const { data, error } = await supabase
+        .from('news')
+        .select(`
+          *,
+          profiles (first_name, last_name, role)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error loading news:', error);
+        setNews([]);
+      } else {
+        setNews((data || []) as any);
+      }
+    } catch (err) {
+      console.error('Exception loading news:', err);
+      setNews([]);
     }
   };
 
@@ -482,66 +497,103 @@ export const AdminPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle>News Management</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Manage all news articles submitted by users. Approve or reject pending articles.
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {news.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          By: {(() => {
-                            if (!item.profiles) return 'Unknown User';
-                            const role = item.profiles.role;
-                            if (role === 'super_admin') return 'Super Admin';
-                            if (role === 'admin') return 'Admin';
-                            return item.profiles.first_name; // Regular user - first name only
-                          })()} | 
-                          Category: {item.category} | 
-                          Status: {item.status}
-                        </p>
-                        <Badge 
-                          variant={
-                            item.status === 'approved' ? 'default' : 
-                            item.status === 'pending' ? 'secondary' : 'destructive'
-                          }
-                          className="mt-1"
-                        >
-                          {item.status}
-                        </Badge>
+                {news.length === 0 ? (
+                  <div className="text-center py-8">
+                    <h3 className="text-lg font-semibold mb-2">No news articles found</h3>
+                    <p className="text-muted-foreground">No news articles have been submitted yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {news.map((item) => (
+                      <div key={item.id} className="flex items-start justify-between p-4 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold">{item.title}</h3>
+                            {item.is_breaking && (
+                              <Badge variant="destructive" className="text-xs">
+                                BREAKING
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {item.content?.substring(0, 100)}...
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            By: {(() => {
+                              if (!item.profiles) return 'Unknown User';
+                              const role = item.profiles.role;
+                              if (role === 'super_admin') return 'Super Admin';
+                              if (role === 'admin') return 'Admin';
+                              return item.profiles.first_name; // Regular user - first name only
+                            })()} | 
+                            Category: {item.category.replace(/_/g, ' ')} | 
+                            Status: <Badge 
+                              variant={
+                                item.status === 'approved' ? 'default' : 
+                                item.status === 'pending' ? 'secondary' : 'destructive'
+                              }
+                              className="ml-1"
+                            >
+                              {item.status}
+                            </Badge>
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(item.created_at).toLocaleDateString()} at {new Date(item.created_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2 ml-4">
+                          {item.status === 'pending' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => updateNewsStatus(item.id, 'approved')}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <Check className="h-4 w-4" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => updateNewsStatus(item.id, 'rejected')}
+                              >
+                                <X className="h-4 w-4" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                          {item.status === 'approved' && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => updateNewsStatus(item.id, 'rejected')}
+                            >
+                              <X className="h-4 w-4" />
+                              Reject
+                            </Button>
+                          )}
+                          {item.status === 'rejected' && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => updateNewsStatus(item.id, 'approved')}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Check className="h-4 w-4" />
+                              Approve
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                       <div className="flex space-x-2">
-                         {item.status === 'pending' && (
-                           <>
-                             <Button
-                               size="sm"
-                               variant="default"
-                               onClick={() => updateNewsStatus(item.id, 'approved')}
-                             >
-                               <Check className="h-4 w-4" />
-                             </Button>
-                             <Button
-                               size="sm"
-                               variant="destructive"
-                               onClick={() => updateNewsStatus(item.id, 'rejected')}
-                             >
-                               <X className="h-4 w-4" />
-                             </Button>
-                           </>
-                         )}
-                         {item.status === 'approved' && (
-                           <Button
-                             size="sm"
-                             variant="destructive"
-                             onClick={() => updateNewsStatus(item.id, 'rejected')}
-                           >
-                             Reject
-                           </Button>
-                         )}
-                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
