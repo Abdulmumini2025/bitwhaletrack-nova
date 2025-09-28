@@ -12,7 +12,7 @@ import {
   Row,
   Column,
   Img,
-} from 'npm:@react-email/components@0.0.22'
+} from 'https://esm.sh/@react-email/components@0.0.22'
 import * as React from 'npm:react@18.3.1'
 
 interface AuthEmailProps {
