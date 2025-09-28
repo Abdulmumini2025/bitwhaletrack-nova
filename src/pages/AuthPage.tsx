@@ -84,11 +84,26 @@ export const AuthPage = () => {
         description: "Please check your email to verify your account.",
       });
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Provide user-friendly error messages for sign up
+      if (error.message.includes("User already registered")) {
+        toast({
+          title: "Account Exists",
+          description: "An account with this email already exists. Please sign in instead or use forgot password if needed.",
+          variant: "destructive",
+        });
+      } else if (error.message.includes("Password should be at least")) {
+        toast({
+          title: "Weak Password",
+          description: "Password must be at least 6 characters long.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Registration Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +119,29 @@ export const AuthPage = () => {
         password: formData.password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Provide user-friendly error messages
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            title: "Login Failed",
+            description: "Incorrect email or password. Please check your credentials and try again.",
+            variant: "destructive",
+          });
+        } else if (error.message.includes("Email not confirmed")) {
+          toast({
+            title: "Email Not Verified",
+            description: "Please check your email and click the verification link before signing in.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
 
       toast({
         title: "Welcome back!",
@@ -113,8 +150,8 @@ export const AuthPage = () => {
       navigate("/");
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -148,11 +185,20 @@ export const AuthPage = () => {
       setResetStep('otp');
     } catch (error: any) {
       console.error("Failed to send reset email:", error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      // Provide user-friendly error messages for password reset
+      if (error.message.includes("User not found")) {
+        toast({
+          title: "Email Not Found",
+          description: "No account found with this email address. Please check your email or sign up for a new account.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Reset Email Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -97,8 +97,15 @@ export const AuthEmail = ({
             {/* Verification Code (for recovery) */}
             {email_action_type === 'recovery' && (
               <Section style={codeSection}>
-                <Text style={codeLabel}>Your verification code:</Text>
-                <Text style={code}>{token}</Text>
+                <Text style={codeLabel}>Your 6-digit verification code:</Text>
+                <div style={codeContainer}>
+                  {token.split('').map((digit, index) => (
+                    <div key={index} style={digitBox}>
+                      <Text style={digitText}>{digit}</Text>
+                    </div>
+                  ))}
+                </div>
+                <Text style={codeSubText}>Enter this code in the app to reset your password</Text>
               </Section>
             )}
 
@@ -207,24 +214,51 @@ const text = {
 const codeSection = {
   textAlign: 'center' as const,
   margin: '30px 0',
-  padding: '20px',
+  padding: '30px 20px',
   backgroundColor: '#f7fafc',
-  borderRadius: '8px',
+  borderRadius: '12px',
+  border: '2px solid #e2e8f0',
 }
 
 const codeLabel = {
   color: '#4a5568',
-  fontSize: '14px',
-  margin: '0 0 10px 0',
+  fontSize: '16px',
+  fontWeight: '600',
+  margin: '0 0 20px 0',
 }
 
-const code = {
+const codeContainer = {
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '8px',
+  margin: '20px 0',
+}
+
+const digitBox = {
+  backgroundColor: '#ffffff',
+  border: '2px solid #3b82f6',
+  borderRadius: '8px',
+  width: '50px',
+  height: '60px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxShadow: '0 2px 4px rgba(59, 130, 246, 0.1)',
+}
+
+const digitText = {
   color: '#1a1a1a',
-  fontSize: '32px',
+  fontSize: '28px',
   fontWeight: 'bold',
   fontFamily: 'Monaco, "Lucida Console", monospace',
-  letterSpacing: '8px',
   margin: '0',
+}
+
+const codeSubText = {
+  color: '#6b7280',
+  fontSize: '14px',
+  margin: '15px 0 0 0',
+  fontStyle: 'italic',
 }
 
 const buttonSection = {
