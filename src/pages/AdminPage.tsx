@@ -117,20 +117,49 @@ export const AdminPage = () => {
 
   const loadNews = async () => {
     try {
-      const { data, error } = await supabase
+      // First get all news
+      const { data: newsData, error: newsError } = await supabase
         .from('news')
-        .select(`
-          *,
-          profiles (first_name, last_name, role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Error loading news:', error);
+      if (newsError) {
+        console.error('Error loading news:', newsError);
         setNews([]);
-      } else {
-        setNews((data || []) as any);
+        return;
       }
+      
+      if (!newsData || newsData.length === 0) {
+        setNews([]);
+        return;
+      }
+      
+      // Get unique author IDs
+      const authorIds = [...new Set(newsData.map(n => n.author_id))];
+      
+      // Get profiles for these authors
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, role')
+        .in('user_id', authorIds);
+      
+      if (profilesError) {
+        console.error('Error loading profiles:', profilesError);
+      }
+      
+      // Create a map of user_id to profile
+      const profilesMap = new Map(
+        profilesData?.map(p => [p.user_id, p]) || []
+      );
+      
+      // Merge news with profiles
+      const newsWithProfiles = newsData.map(news => ({
+        ...news,
+        profiles: profilesMap.get(news.author_id) || null
+      }));
+      
+      setNews(newsWithProfiles as NewsItem[]);
+      
     } catch (err) {
       console.error('Exception loading news:', err);
       setNews([]);
