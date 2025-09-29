@@ -660,81 +660,209 @@ export const AdminPage = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="news" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>News Management</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  All submitted news is automatically approved. You can reject articles if they violate community guidelines.
-                </p>
+          <TabsContent value="news" className="space-y-8">
+            <Card className="glass-card">
+              <CardHeader className="pb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
+                      News Management Center
+                    </CardTitle>
+                    <p className="text-muted-foreground mt-1">
+                      Monitor, moderate, and manage all news content submissions
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Badge variant="outline" className="border-green-500/30 text-green-600 bg-green-500/10">
+                      {news.filter(n => n.status === 'approved').length} Approved
+                    </Badge>
+                    <Badge variant="outline" className="border-red-500/30 text-red-600 bg-red-500/10">
+                      {news.filter(n => n.status === 'rejected').length} Rejected
+                    </Badge>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {news.length === 0 ? (
-                  <div className="text-center py-8">
-                    <h3 className="text-lg font-semibold mb-2">No news articles found</h3>
-                    <p className="text-muted-foreground">No news articles have been submitted yet.</p>
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <FileText className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">No News Articles</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                      No news articles have been submitted yet. Articles will appear here once users start sharing news.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {news.map((item) => (
-                      <div key={item.id} className="flex items-start justify-between p-4 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{item.title}</h3>
-                            {item.is_breaking && (
-                              <Badge variant="destructive" className="text-xs">
-                                BREAKING
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {item.content?.substring(0, 100)}...
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            By: {(() => {
-                              if (!item.profiles) return 'Unknown User';
-                              const role = item.profiles.role;
-                              if (role === 'super_admin') return 'Super Admin';
-                              if (role === 'admin') return 'Admin';
-                              return item.profiles.first_name; // Regular user - first name only
-                            })()} | 
-                            Category: {item.category.replace(/_/g, ' ')} | 
-                            Status: <Badge 
-                              variant={item.status === 'approved' ? 'default' : 'destructive'}
-                              className="ml-1"
-                            >
-                              {item.status}
-                            </Badge>
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(item.created_at).toLocaleDateString()} at {new Date(item.created_at).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <div className="flex space-x-2 ml-4">
-                          {item.status === 'approved' && (
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateNewsStatus(item.id, 'rejected')}
-                            >
-                              <X className="h-4 w-4 mr-1" />
-                              Reject Post
-                            </Button>
-                          )}
-                          {item.status === 'rejected' && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => updateNewsStatus(item.id, 'approved')}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Check className="h-4 w-4 mr-1" />
-                              Restore Post
-                            </Button>
-                          )}
-                        </div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold">All Articles</h3>
+                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <span>Total: {news.length}</span>
+                        <div className="w-px h-4 bg-border"></div>
+                        <span>Breaking: {news.filter(n => n.is_breaking).length}</span>
                       </div>
-                    ))}
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {news.map((item) => (
+                        <Card key={item.id} className={`transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 ${
+                          item.status === 'approved' ? 'hover:border-green-500/30 border-green-500/20' : 
+                          item.status === 'rejected' ? 'border-red-500/20 opacity-75' : 
+                          'hover:border-primary/30'
+                        }`}>
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between space-x-6">
+                              {/* Article Content */}
+                              <div className="flex-1 space-y-4">
+                                {/* Header with title and breaking badge */}
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <h3 className="font-semibold text-lg leading-tight line-clamp-2">
+                                        {item.title}
+                                      </h3>
+                                      {item.is_breaking && (
+                                        <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white border-0 shadow-md animate-pulse">
+                                          🚨 BREAKING
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Status Badge */}
+                                    <div className="flex items-center space-x-2">
+                                      <Badge 
+                                        variant={item.status === 'approved' ? 'default' : 'destructive'}
+                                        className={
+                                          item.status === 'approved' 
+                                            ? 'bg-green-600 hover:bg-green-700 border-0 text-white' 
+                                            : item.status === 'rejected'
+                                            ? 'bg-red-600 hover:bg-red-700 border-0 text-white'
+                                            : 'bg-yellow-600 hover:bg-yellow-700 border-0 text-white'
+                                        }
+                                      >
+                                        {item.status === 'approved' && <Check className="h-3 w-3 mr-1" />}
+                                        {item.status === 'rejected' && <X className="h-3 w-3 mr-1" />}
+                                        {item.status.toUpperCase()}
+                                      </Badge>
+                                      
+                                      <Badge variant="outline" className="border-crypto-blue/30 text-crypto-blue bg-crypto-blue/5">
+                                        {item.category.replace(/_/g, ' ').toUpperCase()}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Article Preview */}
+                                <p className="text-muted-foreground leading-relaxed line-clamp-3">
+                                  {item.content?.substring(0, 200)}
+                                  {item.content && item.content.length > 200 && '...'}
+                                </p>
+
+                                {/* Author and Meta Info */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    {/* Author Avatar */}
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm ${
+                                      !item.profiles ? 'bg-gradient-to-r from-muted-foreground to-muted-foreground/80' :
+                                      item.profiles.role === 'super_admin' ? 'bg-gradient-primary' :
+                                      item.profiles.role === 'admin' ? 'bg-gradient-to-r from-secondary to-primary' :
+                                      'bg-gradient-to-r from-crypto-blue to-crypto-gold'
+                                    }`}>
+                                      {!item.profiles ? '?' : 
+                                       item.profiles.first_name?.charAt(0)?.toUpperCase() || '?'}
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-medium">
+                                        {(() => {
+                                          if (!item.profiles) return 'Unknown User';
+                                          const role = item.profiles.role;
+                                          if (role === 'super_admin') return 'Super Admin';
+                                          if (role === 'admin') return 'Admin';
+                                          return item.profiles.first_name;
+                                        })()}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {new Date(item.created_at).toLocaleDateString('en-US', { 
+                                          month: 'short', 
+                                          day: 'numeric', 
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Action Buttons */}
+                                  <div className="flex items-center space-x-2">
+                                    {item.status === 'approved' && (
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => updateNewsStatus(item.id, 'rejected')}
+                                        className="bg-red-600 hover:bg-red-700 border-0 shadow-md"
+                                      >
+                                        <X className="h-3 w-3 mr-1" />
+                                        Reject
+                                      </Button>
+                                    )}
+                                    {item.status === 'rejected' && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => updateNewsStatus(item.id, 'approved')}
+                                        className="bg-green-600 hover:bg-green-700 text-white border-0 shadow-md"
+                                      >
+                                        <Check className="h-3 w-3 mr-1" />
+                                        Restore
+                                      </Button>
+                                    )}
+                                    {item.status === 'pending' && (
+                                      <>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => updateNewsStatus(item.id, 'approved')}
+                                          className="bg-green-600 hover:bg-green-700 text-white border-0 shadow-md"
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Approve
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="destructive"
+                                          onClick={() => updateNewsStatus(item.id, 'rejected')}
+                                          className="bg-red-600 hover:bg-red-700 border-0 shadow-md"
+                                        >
+                                          <X className="h-3 w-3 mr-1" />
+                                          Reject
+                                        </Button>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Article Image Preview */}
+                                {item.image_url && (
+                                  <div className="mt-4">
+                                    <div className="w-full h-32 rounded-lg overflow-hidden bg-muted">
+                                      <img 
+                                        src={item.image_url} 
+                                        alt={item.title}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
