@@ -415,108 +415,246 @@ export const AdminPage = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="users" className="space-y-8">
             {userRole === 'super_admin' && (
-              <Card className="border-primary">
-                <CardHeader>
-                  <CardTitle className="text-primary">Admin Management</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    As a Super Admin, you can promote users to Admin role to help manage the platform.
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-2 p-3 bg-primary/5 rounded-lg">
-                    <Shield className="h-5 w-5 text-primary" />
+              <Card className="glass-card border-crypto-blue/30 bg-gradient-to-r from-crypto-blue/10 to-crypto-gold/5">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-full bg-gradient-primary">
+                      <Shield className="h-6 w-6 text-white" />
+                    </div>
                     <div>
-                      <p className="text-sm font-medium">Admin Privileges Include:</p>
-                      <p className="text-xs text-muted-foreground">
-                        Moderate news, manage users, view messages, and approve content
+                      <CardTitle className="text-xl bg-gradient-primary bg-clip-text text-transparent">
+                        Admin Management Center
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Empower trusted users with administrative privileges
                       </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+                        <Users className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">User Management</p>
+                        <p className="text-xs text-muted-foreground">Role assignments</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+                        <FileText className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Content Moderation</p>
+                        <p className="text-xs text-muted-foreground">News approval</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+                        <MessageSquare className="h-4 w-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Communication</p>
+                        <p className="text-xs text-muted-foreground">Message handling</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {userRole === 'super_admin' ? 
-                    'Manage user roles and permissions. Click "Make Admin" to promote users.' :
-                    'View and manage user accounts.'
-                  }
-                </p>
-              </CardHeader>
-              <CardContent>
-                {userRole === 'super_admin' && (
-                  <div className="mb-6 p-4 border rounded-lg">
-                    <h4 className="font-semibold mb-2">Create Admin</h4>
-                    <div className="flex flex-col md:flex-row gap-2">
-                      <input
-                        type="email"
-                        placeholder="Admin email"
-                        value={createAdminEmail}
-                        onChange={(e) => setCreateAdminEmail(e.target.value)}
-                        className="border rounded-md px-3 py-2 w-full md:w-auto"
-                      />
-                      <input
-                        type="password"
-                        placeholder="Temporary password (optional)"
-                        value={createAdminPassword}
-                        onChange={(e) => setCreateAdminPassword(e.target.value)}
-                        className="border rounded-md px-3 py-2 w-full md:w-auto"
-                      />
-                      <Button onClick={createAdminAccount} disabled={isCreatingAdmin}>
-                        {isCreatingAdmin ? 'Creating...' : 'Create Admin'}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">If password is omitted, an email link can be used by the user to set a password.</p>
+            <Card className="glass-card">
+              <CardHeader className="pb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent">
+                      User Management
+                    </CardTitle>
+                    <p className="text-muted-foreground mt-1">
+                      {userRole === 'super_admin' ? 
+                        'Manage user roles, permissions, and account status' :
+                        'View and moderate user accounts'
+                      }
+                    </p>
                   </div>
-                )}
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>
-                          {user.role === 'super_admin' && (
-                            <Badge className="bg-gradient-primary text-white">Super Admin</Badge>
-                          )}
-                          {user.role === 'admin' && (
-                            <Badge variant="secondary">Admin</Badge>
-                          )}
+                  <Badge variant="outline" className="border-crypto-blue/30 text-crypto-blue">
+                    {users.length} Total Users
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {userRole === 'super_admin' && (
+                  <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-gradient-primary flex items-center justify-center">
+                          <Shield className="h-3 w-3 text-white" />
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Role: {user.role} | Joined: {new Date(user.created_at).toLocaleDateString()}
-                        </p>
-                        {user.is_blocked && (
-                          <Badge variant="destructive" className="mt-1">Blocked</Badge>
-                        )}
+                        <h4 className="font-semibold text-lg">Create New Admin</h4>
                       </div>
-                      <div className="flex space-x-2">
-                        {userRole === 'super_admin' && user.role !== 'super_admin' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant={user.role === 'admin' ? "destructive" : "default"}
-                              onClick={() => updateUserRole(user.user_id, user.role === 'admin' ? 'user' : 'admin')}
-                              className={user.role !== 'admin' ? "bg-primary hover:bg-primary/90" : ""}
-                            >
-                              {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          size="sm"
-                          variant={user.is_blocked ? "default" : "destructive"}
-                          onClick={() => toggleUserBlock(user.user_id, user.is_blocked)}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground">Email Address</label>
+                          <input
+                            type="email"
+                            placeholder="Enter admin email"
+                            value={createAdminEmail}
+                            onChange={(e) => setCreateAdminEmail(e.target.value)}
+                            className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-muted-foreground">Temporary Password</label>
+                          <input
+                            type="password"
+                            placeholder="Optional password"
+                            value={createAdminPassword}
+                            onChange={(e) => setCreateAdminPassword(e.target.value)}
+                            className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <p className="text-xs text-muted-foreground">
+                          💡 If password is omitted, the user will receive an email invitation to set their password
+                        </p>
+                        <Button 
+                          onClick={createAdminAccount} 
+                          disabled={isCreatingAdmin}
+                          className="bg-gradient-primary hover:opacity-90 transition-opacity px-6"
                         >
-                          {user.is_blocked ? 'Unblock' : 'Block'}
+                          {isCreatingAdmin ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Create Admin
+                            </>
+                          )}
                         </Button>
                       </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">All Users</h3>
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 rounded-full bg-gradient-primary"></div>
+                        <span>Admins: {users.filter(u => ['admin', 'super_admin'].includes(u.role)).length}</span>
+                      </div>
+                      <div className="w-px h-4 bg-border"></div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                        <span>Blocked: {users.filter(u => u.is_blocked).length}</span>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {users.map((user) => (
+                      <Card key={user.id} className={`transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 ${user.is_blocked ? 'opacity-75 border-destructive/30' : 'hover:border-primary/30'}`}>
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              {/* User Avatar */}
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg ${
+                                user.role === 'super_admin' ? 'bg-gradient-primary' :
+                                user.role === 'admin' ? 'bg-gradient-to-r from-secondary to-primary' :
+                                'bg-gradient-to-r from-muted-foreground to-muted-foreground/80'
+                              }`}>
+                                {user.first_name?.charAt(0)?.toUpperCase() || '?'}{user.last_name?.charAt(0)?.toUpperCase() || ''}
+                              </div>
+                              
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-3">
+                                  <h3 className="font-semibold text-lg">{user.first_name} {user.last_name}</h3>
+                                  
+                                  {user.role === 'super_admin' && (
+                                    <Badge className="bg-gradient-primary text-white border-0 shadow-md">
+                                      <Shield className="h-3 w-3 mr-1" />
+                                      Super Admin
+                                    </Badge>
+                                  )}
+                                  {user.role === 'admin' && (
+                                    <Badge variant="secondary" className="border-primary/30 text-primary bg-primary/10">
+                                      <Shield className="h-3 w-3 mr-1" />
+                                      Admin
+                                    </Badge>
+                                  )}
+                                  {user.role === 'user' && (
+                                    <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground">
+                                      User
+                                    </Badge>
+                                  )}
+                                </div>
+                                
+                                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                  <span>Joined {new Date(user.created_at).toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric', 
+                                    year: 'numeric' 
+                                  })}</span>
+                                  <div className="w-px h-4 bg-border"></div>
+                                  <span className="capitalize">{user.role.replace('_', ' ')}</span>
+                                </div>
+                                
+                                {user.is_blocked && (
+                                  <Badge variant="destructive" className="mt-2">
+                                    <X className="h-3 w-3 mr-1" />
+                                    Account Blocked
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              {userRole === 'super_admin' && user.role !== 'super_admin' && (
+                                <Button
+                                  size="sm"
+                                  variant={user.role === 'admin' ? "destructive" : "default"}
+                                  onClick={() => updateUserRole(user.user_id, user.role === 'admin' ? 'user' : 'admin')}
+                                  className={user.role !== 'admin' ? "bg-gradient-primary hover:opacity-90 text-white border-0" : ""}
+                                >
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant={user.is_blocked ? "default" : "destructive"}
+                                onClick={() => toggleUserBlock(user.user_id, user.is_blocked)}
+                                className={user.is_blocked ? "bg-green-600 hover:bg-green-700 text-white border-0" : ""}
+                              >
+                                {user.is_blocked ? (
+                                  <>
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Unblock
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="h-3 w-3 mr-1" />
+                                    Block
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               </CardContent>
             </Card>
