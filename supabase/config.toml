@@ -25,3 +25,6 @@ content_path = "./supabase/templates/email_change.html"
 
 [functions.send-auth-email]
 verify_jwt = false
+
+[functions.ai-crypto-chat]
+verify_jwt = false

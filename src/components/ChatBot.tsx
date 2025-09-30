@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -34,112 +35,44 @@ export const ChatBot = () => {
     scrollToBottom();
   }, [messages]);
 
-  const generateResponse = async (userMessage: string): Promise<string> => {
-    const lowercaseMessage = userMessage.toLowerCase();
-    
+  const generateResponse = async (userMessage: string, conversationHistory: Message[]): Promise<string> => {
     try {
-      // Price queries - fetch real data from CoinGecko
-      if (lowercaseMessage.includes("price") || lowercaseMessage.includes("cost") || 
-          lowercaseMessage.includes("btc") || lowercaseMessage.includes("bitcoin") ||
-          lowercaseMessage.includes("eth") || lowercaseMessage.includes("ethereum") ||
-          lowercaseMessage.includes("bnb") || lowercaseMessage.includes("solana") ||
-          lowercaseMessage.includes("ada") || lowercaseMessage.includes("cardano")) {
-        
-        const cryptoMap: { [key: string]: string } = {
-          'btc': 'bitcoin',
-          'bitcoin': 'bitcoin',
-          'eth': 'ethereum', 
-          'ethereum': 'ethereum',
-          'bnb': 'binancecoin',
-          'sol': 'solana',
-          'solana': 'solana',
-          'ada': 'cardano',
-          'cardano': 'cardano'
-        };
-        
-        // Find which crypto was mentioned
-        let cryptoId = '';
-        for (const [key, value] of Object.entries(cryptoMap)) {
-          if (lowercaseMessage.includes(key)) {
-            cryptoId = value;
-            break;
-          }
-        }
-        
-        if (cryptoId) {
-          try {
-            const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd&include_24hr_change=true`);
-            const data = await response.json();
-            
-            if (data[cryptoId]) {
-              const price = data[cryptoId].usd;
-              const change = data[cryptoId].usd_24h_change;
-              const changeSymbol = change >= 0 ? '+' : '';
-              const cryptoName = cryptoId.charAt(0).toUpperCase() + cryptoId.slice(1);
-              
-              return `${cryptoName} (${cryptoId.toUpperCase()}) is currently trading at $${price.toLocaleString()} USD with a 24-hour change of ${changeSymbol}${change.toFixed(2)}%. ${change >= 0 ? '📈' : '📉'} Data provided by CoinGecko API.`;
-            }
-          } catch (error) {
-            console.error('Error fetching price data:', error);
-          }
-        }
-        
-        // Fallback for general price queries
-        return "I can provide real-time cryptocurrency prices! Try asking about Bitcoin (BTC), Ethereum (ETH), BNB, Solana (SOL), or Cardano (ADA). For example: 'What's the Bitcoin price?' or 'ETH price today'. All price data comes from CoinGecko API for accuracy.";
-      }
+      console.log('Calling AI crypto chat with message:', userMessage);
       
-      // Market data queries
-      if (lowercaseMessage.includes("market") || lowercaseMessage.includes("cap") || lowercaseMessage.includes("volume")) {
-        try {
-          const response = await fetch('https://api.coingecko.com/api/v3/global');
-          const data = await response.json();
-          const globalData = data.data;
-          
-          const totalMarketCap = globalData.total_market_cap.usd;
-          const totalVolume = globalData.total_volume.usd;
-          const btcDominance = globalData.market_cap_percentage.bitcoin;
-          
-          return `Current crypto market overview: Total market cap is $${(totalMarketCap / 1e12).toFixed(2)}T, 24h volume is $${(totalVolume / 1e9).toFixed(2)}B, and Bitcoin dominance is ${btcDominance.toFixed(1)}%. Data from CoinGecko API.`;
-        } catch (error) {
-          return "I couldn't fetch current market data at the moment. Please try again or ask about specific cryptocurrency prices.";
-        }
+      // Build conversation history in the format expected by the AI
+      const formattedMessages = conversationHistory.map(msg => ({
+        role: msg.isBot ? 'assistant' : 'user',
+        content: msg.text
+      }));
+
+      // Add the new user message
+      formattedMessages.push({
+        role: 'user',
+        content: userMessage
+      });
+
+      // Call the AI edge function
+      const { data, error } = await supabase.functions.invoke('ai-crypto-chat', {
+        body: { messages: formattedMessages }
+      });
+
+      if (error) {
+        console.error('Error calling AI function:', error);
+        throw error;
       }
-      
-      // Enhanced static responses with real-time context
-      if (lowercaseMessage.includes("blockchain")) {
-        return "Blockchain is a distributed ledger technology that maintains a continuously growing list of records (blocks) linked and secured using cryptography. Each block contains a hash of the previous block, timestamp, and transaction data. This creates an immutable and transparent record system that's the foundation of all cryptocurrencies. Fun fact: Bitcoin's blockchain processes about 7 transactions per second!";
+
+      console.log('AI response received:', data);
+
+      if (data.message) {
+        return data.message;
       }
-      
-      if (lowercaseMessage.includes("defi") || lowercaseMessage.includes("decentralized finance")) {
-        return "DeFi (Decentralized Finance) refers to financial services built on blockchain networks, primarily Ethereum. DeFi applications enable lending, borrowing, trading, and earning yield without traditional intermediaries like banks. Popular DeFi protocols include Uniswap, Aave, Compound, and MakerDAO. The total value locked (TVL) in DeFi has grown exponentially!";
-      }
-      
-      if (lowercaseMessage.includes("nft") || lowercaseMessage.includes("non-fungible")) {
-        return "NFTs (Non-Fungible Tokens) are unique digital assets stored on blockchain networks. Unlike cryptocurrencies, each NFT is unique and cannot be exchanged on a one-to-one basis. They're commonly used for digital art, collectibles, gaming items, and proving ownership of digital content. The NFT market has seen both explosive growth and significant volatility.";
-      }
-      
-      if (lowercaseMessage.includes("mining") || lowercaseMessage.includes("mine")) {
-        return "Cryptocurrency mining is the process of validating transactions and adding them to the blockchain. Miners compete to solve complex mathematical problems using computational power. Successful miners are rewarded with newly minted cryptocurrency. Bitcoin uses Proof-of-Work mining, while many newer networks use more energy-efficient consensus mechanisms like Proof-of-Stake.";
-      }
-      
-      if (lowercaseMessage.includes("wallet")) {
-        return "Crypto wallets store your private keys and allow you to send, receive, and manage cryptocurrencies. Types include: 1) Hot wallets (online, more convenient but less secure), 2) Cold wallets (offline, more secure for large amounts), 3) Hardware wallets (physical devices), 4) Paper wallets (printed keys). Popular wallets include MetaMask, Ledger, and Trezor. Always keep your seed phrase secure!";
-      }
-      
-      if (lowercaseMessage.includes("invest") || lowercaseMessage.includes("buy")) {
-        return "I can't provide investment advice, but I can share some general principles: 1) Only invest what you can afford to lose, 2) Do thorough research (DYOR), 3) Diversify your portfolio, 4) Understand the technology behind projects, 5) Be aware of market volatility. Consider consulting with financial advisors for personalized investment guidance. Remember: crypto markets are highly volatile!";
-      }
-      
-      if (lowercaseMessage.includes("regulation") || lowercaseMessage.includes("legal")) {
-        return "Cryptocurrency regulation varies by country and is constantly evolving. Some countries have embraced crypto (like El Salvador with Bitcoin), others have imposed restrictions or bans. Key regulatory considerations include taxation, anti-money laundering (AML), know-your-customer (KYC) requirements, and consumer protection. Always check your local laws and regulations.";
-      }
+
+      throw new Error('No message in response');
       
     } catch (error) {
       console.error('Error in generateResponse:', error);
+      return "I'm having trouble connecting right now. Please try again in a moment. I'm powered by AI and can fetch real-time cryptocurrency data for you!";
     }
-    
-    // Default response
-    return "That's an interesting question about cryptocurrency! I can provide real-time prices for Bitcoin, Ethereum, BNB, Solana, and more using live CoinGecko data. You can also ask me about blockchain technology, DeFi, NFTs, trading, wallets, mining, or market analysis. What specific aspect would you like to explore?";
   };
 
   const handleSendMessage = async () => {
@@ -156,9 +89,9 @@ export const ChatBot = () => {
     setInputMessage("");
     setIsTyping(true);
 
-    // Simulate AI response delay for realism
-    setTimeout(async () => {
-      const responseText = await generateResponse(inputMessage);
+    // Get AI response with conversation history
+    try {
+      const responseText = await generateResponse(inputMessage, messages);
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         text: responseText,
@@ -168,7 +101,10 @@ export const ChatBot = () => {
 
       setMessages((prev) => [...prev, botResponse]);
       setIsTyping(false);
-    }, 1000 + Math.random() * 1000); // 1-2 second delay
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
