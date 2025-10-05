@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Heart, Share2, Calendar, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Heart, Share2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 
 interface NewsCardProps {
@@ -14,6 +16,8 @@ interface NewsCardProps {
   image?: string;
   imageUrl?: string;
   author: string;
+  authorId?: string;
+  authorAvatar?: string;
   publishedAt: string;
   likes: number;
   isLiked: boolean;
@@ -29,6 +33,8 @@ export const NewsCard = ({
   image,
   imageUrl,
   author,
+  authorId,
+  authorAvatar,
   publishedAt,
   likes,
   isLiked,
@@ -38,6 +44,7 @@ export const NewsCard = ({
   const displayContent = excerpt || content || "";
   const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -115,8 +122,16 @@ export const NewsCard = ({
         </p>
         
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center space-x-2">
-            <User className="h-4 w-4" />
+          <div 
+            className="flex items-center space-x-2 cursor-pointer hover:text-crypto-blue transition-colors"
+            onClick={() => authorId && navigate(`/user/${authorId}`)}
+          >
+            <Avatar className="h-6 w-6 border border-crypto-blue/30">
+              <AvatarImage src={authorAvatar} alt={author} />
+              <AvatarFallback className="text-xs bg-crypto-blue/20">
+                {author.split(' ').map(n => n[0]).join('')}
+              </AvatarFallback>
+            </Avatar>
             <span>{author}</span>
           </div>
           <div className="flex items-center space-x-2">

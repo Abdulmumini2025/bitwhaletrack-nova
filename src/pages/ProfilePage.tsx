@@ -4,17 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail, Save, ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Mail, Save, ArrowLeft, Upload, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
 export const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
     email: "",
+    bio: "",
+    avatarUrl: "",
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -39,7 +44,7 @@ export const ProfilePage = () => {
       // Get profile from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, bio, avatar_url')
         .eq('user_id', user.id)
         .single();
 
@@ -51,6 +56,8 @@ export const ProfilePage = () => {
         firstName: profileData?.first_name || "",
         lastName: profileData?.last_name || "",
         email: user.email || "",
+        bio: profileData?.bio || "",
+        avatarUrl: profileData?.avatar_url || "",
       });
     } catch (error: any) {
       toast({
@@ -61,11 +68,53 @@ export const ProfilePage = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setProfile({
       ...profile,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !user) return;
+
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    setUploading(true);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfile({ ...profile, avatarUrl: publicUrl });
+      toast({
+        title: "Success!",
+        description: "Profile picture uploaded successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -89,6 +138,7 @@ export const ProfilePage = () => {
           user_id: user.id,
           first_name: profile.firstName,
           last_name: profile.lastName,
+          bio: profile.bio,
         });
 
       if (profileError) throw profileError;
@@ -153,6 +203,35 @@ export const ProfilePage = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdateProfile} className="space-y-6">
+                {/* Avatar Upload */}
+                <div className="flex flex-col items-center space-y-4">
+                  <Avatar className="h-32 w-32 border-4 border-crypto-blue/30">
+                    <AvatarImage src={profile.avatarUrl} alt={profile.firstName} />
+                    <AvatarFallback className="bg-crypto-blue/20 text-2xl">
+                      {profile.firstName[0]}{profile.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-center">
+                    <Label htmlFor="avatar" className="cursor-pointer">
+                      <div className="flex items-center space-x-2 px-4 py-2 bg-crypto-blue/20 hover:bg-crypto-blue/30 rounded-lg transition-colors">
+                        {uploading ? (
+                          <Upload className="h-4 w-4 animate-pulse" />
+                        ) : (
+                          <ImageIcon className="h-4 w-4" />
+                        )}
+                        <span>{uploading ? "Uploading..." : "Upload Profile Picture"}</span>
+                      </div>
+                    </Label>
+                    <Input
+                      id="avatar"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-foreground">
@@ -194,8 +273,26 @@ export const ProfilePage = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="bio" className="text-foreground">
+                    Bio
+                  </Label>
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    placeholder="Tell us about yourself..."
+                    value={profile.bio}
+                    onChange={handleInputChange}
+                    className="glass resize-none"
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    This will be visible on your public profile
+                  </p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="email" className="text-foreground">
-                    Email Address
+                    Email Address (Private)
                   </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -208,10 +305,11 @@ export const ProfilePage = () => {
                       onChange={handleInputChange}
                       className="pl-10 glass"
                       required
+                      disabled
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    You can update your email without verification
+                    Your email is private and won't be shown on your public profile
                   </p>
                 </div>
 

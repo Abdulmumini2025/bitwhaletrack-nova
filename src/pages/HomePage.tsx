@@ -172,23 +172,25 @@ export const HomePage = () => {
 
           // Get author info from profiles
           let authorName = 'Crypto News Team';
+          let authorAvatar = '';
           if (article.author_id) {
             try {
               const { data: profile, error } = await supabase
                 .from('profiles')
-                .select('first_name, last_name, role')
+                .select('first_name, last_name, role, avatar_url')
                 .eq('user_id', article.author_id)
                 .single();
               
               if (profile) {
+                authorAvatar = profile.avatar_url || '';
                 // Display based on role
                 if (profile.role === 'super_admin') {
                   authorName = 'Super Admin';
                 } else if (profile.role === 'admin') {
                   authorName = 'Admin';
                 } else {
-                  // For regular users, show first name only
-                  authorName = profile.first_name;
+                  // For regular users, show full name
+                  authorName = `${profile.first_name} ${profile.last_name}`;
                 }
               }
             } catch (err) {
@@ -211,6 +213,7 @@ export const HomePage = () => {
             likes: displayLikes,
             isLiked: userLiked,
             author: authorName,
+            authorAvatar: authorAvatar,
             publishedAt: article.created_at
           };
         })
@@ -454,6 +457,8 @@ export const HomePage = () => {
                 const category = article.category;
                 const imageUrl = ('image_url' in article ? article.image_url : (article as any).image) || "/placeholder.svg";
                 const author = (article as any).author || "Unknown Author";
+                const authorId = article.author_id;
+                const authorAvatar = (article as any).authorAvatar || "";
                 const publishedAt = 'created_at' in article ? article.created_at : (article as any).publishedAt;
                 const likes = article.likes_count || (article as any).likes || 0;
                 const isLiked = article.user_liked || (article as any).isLiked || false;
@@ -467,6 +472,8 @@ export const HomePage = () => {
                     category={category}
                     imageUrl={imageUrl}
                     author={author}
+                    authorId={authorId}
+                    authorAvatar={authorAvatar}
                     publishedAt={publishedAt}
                     likes={likes}
                     isLiked={isLiked}
