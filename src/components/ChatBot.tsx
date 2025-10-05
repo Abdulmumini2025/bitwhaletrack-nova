@@ -14,11 +14,11 @@ interface Message {
 }
 
 export const ChatBot = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Auto-open on first visit
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "Hello! I'm your crypto assistant. Ask me anything about cryptocurrency, Bitcoin, blockchain, or market trends!",
+      text: "Hello! I'm your crypto expert with REAL-TIME data access. Ask me about ANY cryptocurrency price, market trends, or crypto questions!",
       isBot: true,
       timestamp: new Date(),
     },
@@ -116,30 +116,34 @@ export const ChatBot = () => {
 
   return (
     <>
-      {/* Chat Toggle Button */}
+      {/* Chat Toggle Button - Larger and More Visible */}
       <Button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-4 right-4 h-12 w-12 rounded-full crypto-glow pulse-glow shadow-lg ${
+        className={`fixed bottom-6 right-6 h-16 w-16 rounded-full crypto-glow pulse-glow shadow-2xl ${
           isOpen ? "hidden" : "flex"
-        } md:h-14 md:w-14 md:bottom-6 md:right-6`}
+        } md:h-20 md:w-20 md:bottom-8 md:right-8 z-50 animate-bounce`}
         size="icon"
       >
-        <div className="relative">
-          <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
-          <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-crypto-gold animate-pulse" />
+        <div className="relative flex flex-col items-center">
+          <MessageCircle className="h-7 w-7 md:h-9 md:w-9" />
+          <Sparkles className="absolute -top-2 -right-2 h-4 w-4 text-crypto-gold animate-pulse" />
+          <span className="absolute -bottom-6 text-[10px] font-bold text-crypto-gold whitespace-nowrap md:text-xs">Ask AI</span>
         </div>
       </Button>
 
-      {/* Chat Window */}
+      {/* Chat Window - Larger and More Prominent */}
       {isOpen && (
-        <Card className="fixed bottom-4 right-4 w-80 h-96 glass-card crypto-glow z-50 flex flex-col shadow-2xl border-crypto-blue/30 md:w-96 md:h-[480px] md:bottom-6 md:right-6">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 px-3 py-3">
-            <CardTitle className="flex items-center space-x-2">
+        <Card className="fixed bottom-6 right-6 w-[90vw] h-[70vh] glass-card crypto-glow z-50 flex flex-col shadow-2xl border-crypto-blue/30 md:w-[420px] md:h-[600px] md:bottom-8 md:right-8">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 px-4 py-4 bg-gradient-to-r from-crypto-blue/10 to-crypto-gold/10">
+            <CardTitle className="flex items-center space-x-3">
               <div className="relative">
-                <Bot className="h-5 w-5 text-crypto-blue" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-crypto-gold rounded-full animate-pulse"></div>
+                <Bot className="h-6 w-6 text-crypto-blue md:h-7 md:w-7" />
+                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-crypto-gold rounded-full animate-pulse"></div>
               </div>
-              <span className="text-sm font-orbitron md:text-base">AI Assistant</span>
+              <div className="flex flex-col">
+                <span className="text-base font-orbitron md:text-lg">Crypto AI Expert</span>
+                <span className="text-[10px] text-crypto-gold font-semibold">Real-time Data • Ask Anything</span>
+              </div>
             </CardTitle>
             <Button
               variant="ghost"
