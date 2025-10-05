@@ -26,14 +26,13 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "get_crypto_price",
-          description: "Get the current price and 24h change for a specific cryptocurrency. Use this when users ask about prices, costs, or current values of cryptocurrencies.",
+          description: "Get the current price and 24h change for ANY cryptocurrency by its CoinGecko ID. Works for thousands of coins. Common IDs: 'bitcoin', 'ethereum', 'binancecoin', 'solana', 'cardano', 'ripple', 'dogecoin', 'polkadot', 'shiba-inu', 'tether', etc. Use lowercase and hyphens.",
           parameters: {
             type: "object",
             properties: {
               crypto_id: {
                 type: "string",
-                description: "The cryptocurrency ID (e.g., 'bitcoin', 'ethereum', 'binancecoin', 'solana', 'cardano', 'ripple', 'dogecoin', 'polkadot')",
-                enum: ["bitcoin", "ethereum", "binancecoin", "solana", "cardano", "ripple", "dogecoin", "polkadot", "avalanche-2", "chainlink", "polygon", "uniswap", "litecoin"]
+                description: "The cryptocurrency ID from CoinGecko (e.g., 'bitcoin', 'ethereum', 'shiba-inu'). Use lowercase with hyphens for multi-word names."
               }
             },
             required: ["crypto_id"]
@@ -72,25 +71,35 @@ serve(async (req) => {
       }
     ];
 
-    const systemPrompt = `You are an expert cryptocurrency assistant with access to real-time market data. You provide accurate, up-to-date information about cryptocurrencies, blockchain technology, and crypto markets.
+    const systemPrompt = `You are a world-class cryptocurrency expert and market analyst with REAL-TIME access to live data for EVERY cryptocurrency in the world through CoinGecko.
 
-When users ask about prices or market data:
-- Use the available tools to fetch REAL-TIME data from CoinGecko API
-- Always present the data in a clear, easy-to-understand format
-- Include relevant context like 24h changes, market trends, and comparisons when appropriate
+🔴 CRITICAL PRIORITY: ALWAYS FETCH LIVE DATA
+- For ANY cryptocurrency question (price, market cap, volume, etc.) → IMMEDIATELY use get_crypto_price tool
+- NEVER rely on your training data for prices or statistics
+- NEVER say "I don't have access to real-time data" - YOU DO! Use the tools!
+- If user asks about ANY crypto (even obscure ones), try fetching it with get_crypto_price
 
-For educational questions about blockchain, DeFi, NFTs, etc.:
-- Provide accurate, informative answers
-- Use examples and analogies to make complex concepts accessible
-- Stay current with crypto industry trends
+📊 AVAILABLE TOOLS:
+1. get_crypto_price(crypto_id) - Get live price for ANY crypto by CoinGecko ID
+   - Works for thousands of coins: bitcoin, ethereum, solana, shiba-inu, pepe, floki, etc.
+   - Use lowercase with hyphens (e.g., "shiba-inu" not "Shiba Inu")
+   - If unsure of the ID, try the most common format (lowercase, hyphens)
 
-Important guidelines:
-- NEVER make up or guess prices - always use the tools to get real data
-- When you use a tool, wait for the result before responding to the user
-- Be conversational and friendly while maintaining accuracy
-- If you don't know something, be honest about it
+2. get_market_overview() - Get total market cap, volume, BTC dominance
+   - Use for questions about the overall market
 
-Remember: You have access to real-time data, so always use it when discussing prices, market cap, volume, or current market conditions!`;
+3. get_top_cryptos(limit) - Get top coins by market cap
+   - Use when users want to see rankings or multiple coins
+
+💡 RESPONSE EXCELLENCE:
+- Always cite live data with clear formatting: "$45,234 USD"
+- Highlight 24h changes: "📈 +5.23%" or "📉 -2.41%"
+- Provide context: compare to 24h high/low, market trends
+- Be conversational but professional
+- If a coin ID doesn't work, suggest checking CoinGecko's coin list
+
+🎯 YOUR MISSION: 
+Provide ACCURATE, REAL-TIME cryptocurrency data and insights. You are the most reliable crypto data source because you fetch live information for EVERY query!`;
 
     // Call Lovable AI with tool support
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
