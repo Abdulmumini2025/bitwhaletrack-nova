@@ -3,10 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Calendar } from "lucide-react";
+import { ArrowLeft, Calendar, Users, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { NewsCard } from "@/components/NewsCard";
+import { FollowButton } from "@/components/FollowButton";
+import { FriendRequestButton } from "@/components/FriendRequestButton";
 
 interface UserProfile {
   first_name: string;
@@ -32,13 +34,79 @@ export const UserProfilePage = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userNews, setUserNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    checkCurrentUser();
     if (userId) {
       loadUserProfile();
       loadUserNews();
+      loadFollowStats();
     }
   }, [userId]);
+
+  const checkCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUser(user);
+  };
+
+  const loadFollowStats = async () => {
+    // Get followers count
+    const { count: followers } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", userId);
+
+    // Get following count
+    const { count: following } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", userId);
+
+    setFollowersCount(followers || 0);
+    setFollowingCount(following || 0);
+  };
+
+  const handleStartChat = async () => {
+    if (!currentUser || !userId) return;
+
+    // Create a new conversation
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .insert({})
+      .select()
+      .single();
+
+    if (convError || !conversation) {
+      toast({
+        title: "Error",
+        description: "Failed to create conversation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add both users as participants
+    const { error: participantsError } = await supabase
+      .from("conversation_participants")
+      .insert([
+        { conversation_id: conversation.id, user_id: currentUser.id },
+        { conversation_id: conversation.id, user_id: userId },
+      ]);
+
+    if (participantsError) {
+      toast({
+        title: "Error",
+        description: "Failed to add participants",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    navigate("/chat");
+  };
 
   const loadUserProfile = async () => {
     try {
@@ -122,11 +190,35 @@ export const UserProfilePage = () => {
                 <h1 className="text-3xl font-orbitron font-bold text-foreground">
                   {profile.first_name} {profile.last_name}
                 </h1>
-                <div className="flex items-center justify-center text-sm text-muted-foreground mt-2">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span>Joined {new Date(profile.created_at).toLocaleDateString()}</span>
+                <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    <span>{followersCount} followers</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    <span>{followingCount} following</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {new Date(profile.created_at).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
+              {currentUser && currentUser.id !== userId && (
+                <div className="flex gap-2">
+                  <FollowButton userId={userId!} />
+                  <FriendRequestButton userId={userId!} />
+                  <Button
+                    onClick={handleStartChat}
+                    variant="outline"
+                    className="border-crypto-blue/30"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Message
+                  </Button>
+                </div>
+              )}
             </div>
           </CardHeader>
           {profile.bio && (

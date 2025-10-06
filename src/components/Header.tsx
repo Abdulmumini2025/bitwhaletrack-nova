@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bitcoin, Menu, X, Search, User, LogOut } from "lucide-react";
+import { Bitcoin, Menu, X, Search, User, LogOut, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -122,6 +122,12 @@ export const Header = () => {
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/create-news" className="w-full">Submit News</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/chat" className="w-full flex items-center">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Messages
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/contact" className="w-full">Contact Us</Link>

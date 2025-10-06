@@ -12,6 +12,8 @@ import { AdminLoginPage } from "./pages/AdminLoginPage";
 import { CreateNewsPage } from "./pages/CreateNewsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { UserProfilePage } from "./pages/UserProfilePage";
+import { NewsDetailPage } from "./pages/NewsDetailPage";
+import { ChatPage } from "./pages/ChatPage";
 import { ContactPage } from "./pages/ContactPage";
 import NotFound from "./pages/NotFound";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -36,6 +38,8 @@ function App() {
             <Route path="/create-news" element={<CreateNewsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/user/:userId" element={<UserProfilePage />} />
+            <Route path="/news/:newsId" element={<NewsDetailPage />} />
+            <Route path="/chat" element={<ChatPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

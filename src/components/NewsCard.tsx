@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Share2, Calendar } from "lucide-react";
+import { Heart, Share2, Calendar, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,7 +114,10 @@ export const NewsCard = ({
       </CardHeader>
 
       <CardContent className="p-6">
-        <h3 className="text-xl font-orbitron font-semibold mb-3 group-hover:text-crypto-blue transition-colors">
+        <h3
+          className="text-xl font-orbitron font-semibold mb-3 group-hover:text-crypto-blue transition-colors cursor-pointer"
+          onClick={() => id && navigate(`/news/${id}`)}
+        >
           {title}
         </h3>
         <p className="text-muted-foreground line-clamp-3 mb-4">
@@ -142,15 +145,27 @@ export const NewsCard = ({
       </CardContent>
 
       <CardFooter className="p-6 pt-0 flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onLike && id && onLike(id)}
-          className={`${isLiked ? "text-crypto-red" : "text-muted-foreground"} hover:text-crypto-red`}
-        >
-          <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-current" : ""}`} />
-          {likes}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onLike && id && onLike(id)}
+            className={`${isLiked ? "text-crypto-red" : "text-muted-foreground"} hover:text-crypto-red`}
+          >
+            <Heart className={`h-4 w-4 mr-2 ${isLiked ? "fill-current" : ""}`} />
+            {likes}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => id && navigate(`/news/${id}`)}
+            className="text-muted-foreground hover:text-crypto-blue"
+          >
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Comments
+          </Button>
+        </div>
 
         <Button
           variant="ghost"
