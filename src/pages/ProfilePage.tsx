@@ -20,6 +20,7 @@ export const ProfilePage = () => {
     email: "",
     bio: "",
     avatarUrl: "",
+    username: "",
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -44,7 +45,7 @@ export const ProfilePage = () => {
       // Get profile from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('first_name, last_name, bio, avatar_url')
+        .select('first_name, last_name, bio, avatar_url, username')
         .eq('user_id', user.id)
         .single();
 
@@ -58,6 +59,7 @@ export const ProfilePage = () => {
         email: user.email || "",
         bio: profileData?.bio || "",
         avatarUrl: profileData?.avatar_url || "",
+        username: profileData?.username || "",
       });
     } catch (error: any) {
       toast({
@@ -139,6 +141,7 @@ export const ProfilePage = () => {
           first_name: profile.firstName,
           last_name: profile.lastName,
           bio: profile.bio,
+          username: profile.username,
         });
 
       if (profileError) throw profileError;
@@ -270,6 +273,27 @@ export const ProfilePage = () => {
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-foreground">
+                    Username
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="username"
+                      name="username"
+                      type="text"
+                      placeholder="Choose a unique username"
+                      value={profile.username}
+                      onChange={handleInputChange}
+                      className="pl-10 glass"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Others can search for you using your username
+                  </p>
                 </div>
 
                 <div className="space-y-2">

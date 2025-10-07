@@ -16,6 +16,7 @@ interface UserProfile {
   bio: string;
   avatar_url: string;
   created_at: string;
+  username?: string;
 }
 
 interface NewsArticle {
@@ -190,6 +191,9 @@ export const UserProfilePage = () => {
                 <h1 className="text-3xl font-orbitron font-bold text-foreground">
                   {profile.first_name} {profile.last_name}
                 </h1>
+                {profile.username && (
+                  <p className="text-crypto-blue mt-1">@{profile.username}</p>
+                )}
                 <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />

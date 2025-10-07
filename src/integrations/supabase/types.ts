@@ -286,6 +286,7 @@ export type Database = {
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -298,6 +299,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -310,6 +312,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -332,6 +335,16 @@ export type Database = {
       is_admin: {
         Args: { user_uuid?: string }
         Returns: boolean
+      }
+      search_users_by_username: {
+        Args: { search_term: string }
+        Returns: {
+          avatar_url: string
+          first_name: string
+          last_name: string
+          user_id: string
+          username: string
+        }[]
       }
       user_liked_news: {
         Args: { news_article_id: string; user_uuid: string }

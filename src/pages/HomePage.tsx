@@ -3,6 +3,7 @@ import { PriceTicker } from "@/components/PriceTicker";
 import { BreakingNews } from "@/components/BreakingNews";
 import { NewsCard } from "@/components/NewsCard";
 import { ChatBot } from "@/components/ChatBot";
+import { MessengerChat } from "@/components/MessengerChat";
 import { CryptoNewsTicker } from "@/components/CryptoNewsTicker";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -495,6 +496,9 @@ export const HomePage = () => {
 
       {/* AI Chatbot */}
       <ChatBot />
+      
+      {/* Messenger Chat */}
+      <MessengerChat />
 
       {/* Footer */}
       <footer className="border-t glass mt-16">
