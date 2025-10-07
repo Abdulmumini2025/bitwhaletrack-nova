@@ -103,56 +103,81 @@ export const Comments = ({ newsId }: CommentsProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <MessageSquare className="h-5 w-5 text-crypto-blue" />
-        <h3 className="text-xl font-orbitron font-bold text-foreground">
-          Comments ({comments.length})
+      <div className="flex items-center gap-2 mb-6">
+        <MessageSquare className="h-6 w-6 text-crypto-blue" />
+        <h3 className="text-2xl font-orbitron font-bold text-foreground">
+          Comments
         </h3>
+        <span className="text-muted-foreground">({comments.length})</span>
       </div>
 
       {user && (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Write a comment..."
-            className="bg-dark-bg/50 border-crypto-blue/20 text-foreground"
-            rows={3}
-          />
-          <Button
-            type="submit"
-            disabled={loading || !newComment.trim()}
-            className="bg-gradient-to-r from-crypto-blue to-crypto-purple hover:opacity-90"
-          >
-            Post Comment
-          </Button>
-        </form>
-      )}
-
-      <div className="space-y-4">
-        {comments.map((comment) => (
-          <Card key={comment.id} className="glass-card border-crypto-blue/20 p-4">
+        <Card className="glass-card border-crypto-blue/20 p-4 mb-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex gap-3">
-              <Avatar className="h-10 w-10 border-2 border-crypto-blue/30">
-                <AvatarImage src={comment.profiles.avatar_url || undefined} />
-                <AvatarFallback className="bg-crypto-blue/20">
-                  {comment.profiles.first_name[0]}{comment.profiles.last_name[0]}
+              <Avatar className="h-10 w-10 border-2 border-crypto-blue/30 flex-shrink-0">
+                <AvatarFallback className="bg-crypto-blue/20 text-foreground">
+                  You
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-semibold text-foreground">
-                    {comment.profiles.first_name} {comment.profiles.last_name}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(comment.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-muted-foreground">{comment.content}</p>
+                <Textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Write a comment..."
+                  className="glass border-crypto-blue/20 text-foreground resize-none focus:border-crypto-blue transition-colors"
+                  rows={3}
+                />
               </div>
             </div>
-          </Card>
-        ))}
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={loading || !newComment.trim()}
+                className="bg-gradient-to-r from-crypto-blue to-crypto-gold hover:opacity-90 crypto-glow"
+              >
+                {loading ? "Posting..." : "Post Comment"}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      <div className="space-y-3">
+        {comments.length === 0 ? (
+          <div className="text-center py-12 glass-card border-crypto-blue/20 rounded-lg">
+            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+          </div>
+        ) : (
+          comments.map((comment) => (
+            <Card key={comment.id} className="glass-card border-crypto-blue/20 p-4 hover:border-crypto-blue/40 transition-all">
+              <div className="flex gap-3">
+                <Avatar className="h-10 w-10 border-2 border-crypto-blue/30 flex-shrink-0">
+                  <AvatarImage src={comment.profiles.avatar_url || undefined} />
+                  <AvatarFallback className="bg-crypto-blue/20">
+                    {comment.profiles.first_name[0]}{comment.profiles.last_name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="bg-secondary/50 rounded-2xl p-3 mb-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-foreground text-sm">
+                        {comment.profiles.first_name} {comment.profiles.last_name}
+                      </span>
+                    </div>
+                    <p className="text-foreground text-sm break-words">{comment.content}</p>
+                  </div>
+                  <div className="flex items-center gap-4 px-3">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(comment.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );

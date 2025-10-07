@@ -217,47 +217,64 @@ export const ChatPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-dark-bg via-dark-bg to-crypto-dark">
-      <div className="container mx-auto px-4 py-20">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="mb-8"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="mb-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <h1 className="text-3xl font-orbitron font-bold text-gradient">Messages</h1>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-180px)]">
           {/* Conversations List */}
-          <Card className="glass-card border-crypto-blue/20 p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare className="h-5 w-5 text-crypto-blue" />
-              <h2 className="text-xl font-orbitron font-bold text-foreground">Chats</h2>
+          <Card className="glass-card border-crypto-blue/20 p-0 overflow-hidden">
+            <div className="p-4 border-b border-crypto-blue/20 bg-secondary/30">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-crypto-blue" />
+                <h2 className="text-lg font-orbitron font-bold text-foreground">Chats</h2>
+              </div>
             </div>
-            <ScrollArea className="h-full">
+            <ScrollArea className="h-[calc(100%-60px)]">
               {conversations.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No conversations yet</p>
+                <div className="p-8 text-center">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <p className="text-muted-foreground text-sm">No conversations yet</p>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="p-2">
                   {conversations.map((conv) => (
                     <Button
                       key={conv.id}
                       variant={selectedConversation === conv.id ? "secondary" : "ghost"}
-                      className="w-full justify-start"
+                      className={`w-full justify-start p-3 mb-1 h-auto ${
+                        selectedConversation === conv.id 
+                          ? "bg-crypto-blue/10 border border-crypto-blue/30" 
+                          : "hover:bg-secondary/50"
+                      }`}
                       onClick={() => setSelectedConversation(conv.id)}
                     >
-                      <Avatar className="h-8 w-8 mr-2">
+                      <Avatar className="h-12 w-12 mr-3 border-2 border-crypto-blue/30">
                         <AvatarImage src={conv.participants[0]?.profiles.avatar_url || undefined} />
-                        <AvatarFallback className="bg-crypto-blue/20">
+                        <AvatarFallback className="bg-crypto-blue/20 text-foreground">
                           {conv.participants[0]?.profiles.first_name[0]}
                           {conv.participants[0]?.profiles.last_name[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="truncate">
-                        {conv.participants[0]?.profiles.first_name}{" "}
-                        {conv.participants[0]?.profiles.last_name}
-                      </span>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="font-semibold text-foreground truncate">
+                          {conv.participants[0]?.profiles.first_name}{" "}
+                          {conv.participants[0]?.profiles.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(conv.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
                     </Button>
                   ))}
                 </div>
@@ -266,62 +283,106 @@ export const ChatPage = () => {
           </Card>
 
           {/* Messages Area */}
-          <Card className="md:col-span-2 glass-card border-crypto-blue/20 p-4 flex flex-col">
+          <Card className="md:col-span-2 glass-card border-crypto-blue/20 p-0 flex flex-col overflow-hidden">
             {selectedConversation ? (
               <>
-                <ScrollArea className="flex-1 pr-4 mb-4">
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex gap-3 ${
-                          message.sender_id === user?.id ? "flex-row-reverse" : ""
-                        }`}
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={message.profiles.avatar_url || undefined} />
+                {/* Chat Header */}
+                <div className="p-4 border-b border-crypto-blue/20 bg-secondary/30">
+                  <div className="flex items-center gap-3">
+                    {conversations.find(c => c.id === selectedConversation)?.participants[0] && (
+                      <>
+                        <Avatar className="h-10 w-10 border-2 border-crypto-blue/30">
+                          <AvatarImage 
+                            src={conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.avatar_url || undefined} 
+                          />
                           <AvatarFallback className="bg-crypto-blue/20">
-                            {message.profiles.first_name[0]}
-                            {message.profiles.last_name[0]}
+                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.first_name[0]}
+                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.last_name[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender_id === user?.id
-                              ? "bg-crypto-blue text-white"
-                              : "bg-dark-bg/50 text-foreground"
-                          }`}
-                        >
-                          <p>{message.content}</p>
-                          <span className="text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString()}
-                          </span>
+                        <div>
+                          <h3 className="font-semibold text-foreground">
+                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.first_name}{" "}
+                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.last_name}
+                          </h3>
                         </div>
-                      </div>
-                    ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Messages */}
+                <ScrollArea className="flex-1 p-4">
+                  <div className="space-y-3">
+                    {messages.map((message, index) => {
+                      const isOwnMessage = message.sender_id === user?.id;
+                      const showAvatar = index === 0 || messages[index - 1].sender_id !== message.sender_id;
+                      
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                        >
+                          {showAvatar ? (
+                            <Avatar className="h-8 w-8 border-2 border-crypto-blue/30 flex-shrink-0">
+                              <AvatarImage src={message.profiles.avatar_url || undefined} />
+                              <AvatarFallback className="bg-crypto-blue/20 text-xs">
+                                {message.profiles.first_name[0]}
+                                {message.profiles.last_name[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : (
+                            <div className="w-8 flex-shrink-0" />
+                          )}
+                          <div className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} max-w-[70%]`}>
+                            <div
+                              className={`rounded-2xl px-4 py-2 ${
+                                isOwnMessage
+                                  ? "bg-gradient-to-r from-crypto-blue to-crypto-gold text-white rounded-tr-sm"
+                                  : "glass border border-crypto-blue/20 text-foreground rounded-tl-sm"
+                              }`}
+                            >
+                              <p className="text-sm break-words">{message.content}</p>
+                            </div>
+                            <span className="text-xs text-muted-foreground mt-1 px-2">
+                              {new Date(message.created_at).toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
 
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-dark-bg/50 border-crypto-blue/20"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={loading || !newMessage.trim()}
-                    className="bg-gradient-to-r from-crypto-blue to-crypto-purple"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                {/* Input Area */}
+                <form onSubmit={handleSendMessage} className="p-4 border-t border-crypto-blue/20 bg-secondary/30">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Type a message..."
+                      className="flex-1 glass border-crypto-blue/20 focus:border-crypto-blue"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={loading || !newMessage.trim()}
+                      className="bg-gradient-to-r from-crypto-blue to-crypto-gold hover:opacity-90 crypto-glow"
+                      size="icon"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </form>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Select a conversation to start chatting
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
+                <MessageSquare className="h-16 w-16 mb-4 opacity-50" />
+                <p className="text-lg font-medium">Select a conversation</p>
+                <p className="text-sm">Choose a chat from the list to start messaging</p>
               </div>
             )}
           </Card>

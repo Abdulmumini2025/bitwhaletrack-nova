@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -103,14 +104,15 @@ export const Header = () => {
           </form>
 
           {/* User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {user && <NotificationDropdown />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="crypto-glow">
                   <User className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-card">
+              <DropdownMenuContent align="end" className="glass-card z-50 bg-background">
                 {!user ? (
                   <DropdownMenuItem asChild>
                     <Link to="/auth" className="w-full">Login / Register</Link>
