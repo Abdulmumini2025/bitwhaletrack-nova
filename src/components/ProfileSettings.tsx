@@ -61,13 +61,15 @@ export const ProfileSettings = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          user_id: currentUser.id,
           username: profile.username,
           first_name: profile.first_name,
           last_name: profile.last_name,
           bio: profile.bio,
-        })
-        .eq("user_id", currentUser.id);
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 
@@ -75,6 +77,9 @@ export const ProfileSettings = () => {
         title: "Success",
         description: "Profile updated successfully",
       });
+      
+      // Reload to get fresh data
+      await loadProfile();
     } catch (error: any) {
       toast({
         title: "Error",

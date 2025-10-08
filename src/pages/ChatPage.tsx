@@ -1,187 +1,139 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, MessageSquare } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Send, Search, ArrowLeft, UserPlus, MoreVertical, Phone, Video } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { FriendRequestButton } from "@/components/FriendRequestButton";
+import { useNavigate } from "react-router-dom";
+
+interface User {
+  user_id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  avatar_url?: string;
+  isOnline?: boolean;
+}
 
 interface Message {
   id: string;
   content: string;
   sender_id: string;
   created_at: string;
-  profiles: {
-    first_name: string;
-    last_name: string;
-    avatar_url: string | null;
-  };
+  is_read: boolean;
 }
 
 interface Conversation {
   id: string;
-  created_at: string;
-  participants: {
-    user_id: string;
-    profiles: {
-      first_name: string;
-      last_name: string;
-      avatar_url: string | null;
-    };
-  }[];
+  updated_at: string;
+  otherUser: User;
+  lastMessage?: Message;
+  unreadCount?: number;
 }
 
 export const ChatPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [showSearch, setShowSearch] = useState(false);
+  const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    checkUser();
+    checkAuth();
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (currentUser) {
       loadConversations();
+      setupPresence();
     }
-  }, [user]);
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     if (selectedConversation) {
-      loadMessages();
-      subscribeToMessages();
+      loadMessages(selectedConversation);
+      setupMessageListener(selectedConversation);
     }
   }, [selectedConversation]);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const checkUser = async () => {
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      searchUsers();
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
+  const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       navigate("/auth");
-    } else {
-      setUser(user);
+      return;
     }
+    setCurrentUser(user);
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const loadConversations = async () => {
-    const { data, error } = await supabase
-      .from("conversation_participants")
-      .select(`
-        conversation_id,
-        conversations (
-          id,
-          created_at
-        ),
-        profiles:user_id (
-          first_name,
-          last_name,
-          avatar_url
-        )
-      `)
-      .eq("user_id", user.id);
-
-    if (error) {
-      console.error("Error loading conversations:", error);
-    } else {
-      // Group by conversation
-      const conversationMap = new Map();
-      data?.forEach((item: any) => {
-        if (!conversationMap.has(item.conversation_id)) {
-          conversationMap.set(item.conversation_id, {
-            id: item.conversation_id,
-            created_at: item.conversations.created_at,
-            participants: []
+  const setupPresence = async () => {
+    const channel = supabase.channel('online-users');
+    
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const online = new Set<string>();
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((presence: any) => {
+            online.add(presence.user_id);
+          });
+        });
+        setOnlineUsers(online);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: currentUser?.id,
+            online_at: new Date().toISOString(),
           });
         }
       });
 
-      // Load all participants for each conversation
-      const conversationIds = Array.from(conversationMap.keys());
-      for (const convId of conversationIds) {
-        const { data: participants } = await supabase
-          .from("conversation_participants")
-          .select(`
-            user_id,
-            profiles:user_id (
-              first_name,
-              last_name,
-              avatar_url
-            )
-          `)
-          .eq("conversation_id", convId)
-          .neq("user_id", user.id);
-
-        if (participants) {
-          conversationMap.get(convId).participants = participants;
-        }
-      }
-
-      setConversations(Array.from(conversationMap.values()));
-    }
+    channelRef.current = channel;
   };
 
-  const loadMessages = async () => {
-    if (!selectedConversation) return;
-
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", selectedConversation)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("Error loading messages:", error);
-      return;
-    }
-
-    // Fetch profiles for each message
-    const messagesWithProfiles = await Promise.all(
-      (data || []).map(async (message) => {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("first_name, last_name, avatar_url")
-          .eq("user_id", message.sender_id)
-          .single();
-
-        return {
-          ...message,
-          profiles: profile || { first_name: "Unknown", last_name: "User", avatar_url: null }
-        };
-      })
-    );
-
-    setMessages(messagesWithProfiles);
-  };
-
-  const subscribeToMessages = () => {
+  const setupMessageListener = (conversationId: string) => {
     const channel = supabase
-      .channel(`messages:${selectedConversation}`)
+      .channel(`messages-${conversationId}`)
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${selectedConversation}`,
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
         },
-        () => {
-          loadMessages();
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new as Message]);
         }
       )
       .subscribe();
@@ -191,165 +143,452 @@ export const ChatPage = () => {
     };
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const loadConversations = async () => {
+    try {
+      const { data: participants } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', currentUser.id);
+
+      if (!participants) return;
+
+      const convos = await Promise.all(
+        participants.map(async (p) => {
+          const { data: otherParticipants } = await supabase
+            .from('conversation_participants')
+            .select('user_id')
+            .eq('conversation_id', p.conversation_id)
+            .neq('user_id', currentUser.id)
+            .maybeSingle();
+
+          if (!otherParticipants) return null;
+
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', otherParticipants.user_id)
+            .single();
+
+          const { data: lastMsg } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('conversation_id', p.conversation_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          const { data: unreadMessages } = await supabase
+            .from('messages')
+            .select('id', { count: 'exact' })
+            .eq('conversation_id', p.conversation_id)
+            .eq('is_read', false)
+            .neq('sender_id', currentUser.id);
+
+          const { data: convo } = await supabase
+            .from('conversations')
+            .select('updated_at')
+            .eq('id', p.conversation_id)
+            .single();
+
+          return {
+            id: p.conversation_id,
+            updated_at: convo?.updated_at || new Date().toISOString(),
+            otherUser: {
+              user_id: profile.user_id,
+              username: profile.username,
+              first_name: profile.first_name,
+              last_name: profile.last_name,
+              avatar_url: profile.avatar_url,
+              isOnline: onlineUsers.has(profile.user_id),
+            },
+            lastMessage: lastMsg,
+            unreadCount: unreadMessages?.length || 0,
+          };
+        })
+      );
+
+      const sortedConvos = convos
+        .filter(Boolean)
+        .sort((a, b) => new Date(b!.updated_at).getTime() - new Date(a!.updated_at).getTime()) as Conversation[];
+      
+      setConversations(sortedConvos);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
+  const loadMessages = async (conversationId: string) => {
+    try {
+      const { data } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      setMessages(data || []);
+      
+      // Mark messages as read
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', currentUser.id);
+        
+      loadConversations();
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  const searchUsers = async () => {
+    try {
+      const { data } = await supabase
+        .rpc('search_users_by_username', { search_term: searchQuery });
+
+      const filtered = (data || []).filter((u: User) => u.user_id !== currentUser?.id);
+      setSearchResults(filtered.map((u: User) => ({
+        ...u,
+        isOnline: onlineUsers.has(u.user_id),
+      })));
+    } catch (error) {
+      console.error('Error searching users:', error);
+    }
+  };
+
+  const startConversation = async (user: User) => {
+    try {
+      const { data: existingParticipants } = await supabase
+        .from('conversation_participants')
+        .select('conversation_id')
+        .eq('user_id', currentUser.id);
+
+      if (existingParticipants) {
+        for (const p of existingParticipants) {
+          const { data: otherUser } = await supabase
+            .from('conversation_participants')
+            .select('user_id')
+            .eq('conversation_id', p.conversation_id)
+            .eq('user_id', user.user_id)
+            .maybeSingle();
+
+          if (otherUser) {
+            setSelectedConversation(p.conversation_id);
+            setShowSearch(false);
+            setSearchQuery("");
+            return;
+          }
+        }
+      }
+
+      const { data: newConvo, error: convoError } = await supabase
+        .from('conversations')
+        .insert({})
+        .select()
+        .single();
+
+      if (convoError) throw convoError;
+
+      await supabase.from('conversation_participants').insert([
+        { conversation_id: newConvo.id, user_id: currentUser.id },
+        { conversation_id: newConvo.id, user_id: user.user_id },
+      ]);
+
+      setSelectedConversation(newConvo.id);
+      setShowSearch(false);
+      setSearchQuery("");
+      loadConversations();
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
-    setLoading(true);
-    const { error } = await supabase
-      .from("messages")
-      .insert({
+    try {
+      await supabase.from('messages').insert({
         conversation_id: selectedConversation,
-        sender_id: user.id,
-        content: newMessage.trim(),
+        sender_id: currentUser.id,
+        content: newMessage,
       });
 
-    if (error) {
+      await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', selectedConversation);
+
+      setNewMessage("");
+      loadConversations();
+    } catch (error) {
+      console.error('Error sending message:', error);
       toast({
         title: "Error",
         description: "Failed to send message",
         variant: "destructive",
       });
-    } else {
-      setNewMessage("");
     }
-    setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background">
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="mb-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-3xl font-orbitron font-bold text-gradient">Messages</h1>
-        </div>
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  };
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-180px)]">
-          {/* Conversations List */}
-          <Card className="glass-card border-crypto-blue/20 p-0 overflow-hidden">
-            <div className="p-4 border-b border-crypto-blue/20 bg-secondary/30">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-crypto-blue" />
-                <h2 className="text-lg font-orbitron font-bold text-foreground">Chats</h2>
+  const formatMessageTime = (date: string) => {
+    const msgDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (msgDate.toDateString() === today.toDateString()) {
+      return format(msgDate, 'h:mm a');
+    } else if (msgDate.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return format(msgDate, 'MMM d');
+    }
+  };
+
+  if (!currentUser) return null;
+
+  const selectedConvo = conversations.find((c) => c.id === selectedConversation);
+
+  return (
+    <div className="min-h-screen bg-background pt-20">
+      <div className="container mx-auto h-[calc(100vh-5rem)]">
+        <div className="h-full glass-card rounded-2xl overflow-hidden flex">
+          {/* Sidebar - Conversations List */}
+          <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-96 flex-col border-r border-glass-border`}>
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-glass-border bg-card/30">
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-orbitron font-bold text-gradient">Chats</h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/")}
+                  className="rounded-full"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by username..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSearch(true);
+                  }}
+                  onFocus={() => setShowSearch(true)}
+                  className="pl-10 glass-card rounded-full border-none"
+                />
               </div>
             </div>
-            <ScrollArea className="h-[calc(100%-60px)]">
-              {conversations.length === 0 ? (
-                <div className="p-8 text-center">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <p className="text-muted-foreground text-sm">No conversations yet</p>
+
+            {/* Search Results or Conversations */}
+            <ScrollArea className="flex-1">
+              {showSearch && searchQuery.trim() ? (
+                <div className="p-3">
+                  <div className="px-3 py-2 mb-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Search Results ({searchResults.length})
+                    </p>
+                  </div>
+                  {searchResults.map((user) => (
+                    <div
+                      key={user.user_id}
+                      className="flex items-center justify-between p-3 hover:bg-secondary/50 rounded-xl transition-all mb-1 group"
+                    >
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className="relative flex-shrink-0">
+                          <Avatar className="h-12 w-12 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
+                            <AvatarImage src={user.avatar_url} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {getInitials(user.first_name, user.last_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          {user.isOnline && (
+                            <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">
+                            {user.first_name} {user.last_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            @{user.username || 'No username'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => startConversation(user)}
+                          className="h-8 w-8 p-0 rounded-full"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                        </Button>
+                        <FriendRequestButton userId={user.user_id} />
+                      </div>
+                    </div>
+                  ))}
+                  {searchResults.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p className="text-sm">No users found</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-2">
-                  {conversations.map((conv) => (
-                    <Button
-                      key={conv.id}
-                      variant={selectedConversation === conv.id ? "secondary" : "ghost"}
-                      className={`w-full justify-start p-3 mb-1 h-auto ${
-                        selectedConversation === conv.id 
-                          ? "bg-crypto-blue/10 border border-crypto-blue/30" 
-                          : "hover:bg-secondary/50"
-                      }`}
-                      onClick={() => setSelectedConversation(conv.id)}
-                    >
-                      <Avatar className="h-12 w-12 mr-3 border-2 border-crypto-blue/30">
-                        <AvatarImage src={conv.participants[0]?.profiles.avatar_url || undefined} />
-                        <AvatarFallback className="bg-crypto-blue/20 text-foreground">
-                          {conv.participants[0]?.profiles.first_name[0]}
-                          {conv.participants[0]?.profiles.last_name[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-left min-w-0">
-                        <p className="font-semibold text-foreground truncate">
-                          {conv.participants[0]?.profiles.first_name}{" "}
-                          {conv.participants[0]?.profiles.last_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(conv.created_at).toLocaleDateString()}
-                        </p>
+                  {conversations.length === 0 ? (
+                    <div className="text-center py-12 px-6">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Search className="h-8 w-8 text-primary" />
                       </div>
-                    </Button>
-                  ))}
+                      <p className="text-sm font-semibold mb-2">No conversations yet</p>
+                      <p className="text-xs text-muted-foreground">
+                        Search for users by username to start chatting!
+                      </p>
+                    </div>
+                  ) : (
+                    conversations.map((convo) => (
+                      <button
+                        key={convo.id}
+                        onClick={() => setSelectedConversation(convo.id)}
+                        className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all mb-1 hover:bg-secondary/50 ${
+                          selectedConversation === convo.id ? 'bg-secondary/70' : ''
+                        }`}
+                      >
+                        <div className="relative flex-shrink-0">
+                          <Avatar className="h-14 w-14">
+                            <AvatarImage src={convo.otherUser.avatar_url} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {getInitials(convo.otherUser.first_name, convo.otherUser.last_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          {onlineUsers.has(convo.otherUser.user_id) && (
+                            <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-crypto-green rounded-full border-2 border-background" />
+                          )}
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-semibold text-sm truncate">
+                              {convo.otherUser.first_name} {convo.otherUser.last_name}
+                            </p>
+                            {convo.lastMessage && (
+                              <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                                {formatMessageTime(convo.lastMessage.created_at)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {convo.lastMessage?.content || 'No messages yet'}
+                            </p>
+                            {convo.unreadCount! > 0 && (
+                              <Badge className="ml-2 h-5 min-w-5 rounded-full bg-primary text-xs px-1.5">
+                                {convo.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </ScrollArea>
-          </Card>
+          </div>
 
-          {/* Messages Area */}
-          <Card className="md:col-span-2 glass-card border-crypto-blue/20 p-0 flex flex-col overflow-hidden">
-            {selectedConversation ? (
+          {/* Chat Area */}
+          <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
+            {selectedConvo ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-crypto-blue/20 bg-secondary/30">
-                  <div className="flex items-center gap-3">
-                    {conversations.find(c => c.id === selectedConversation)?.participants[0] && (
-                      <>
-                        <Avatar className="h-10 w-10 border-2 border-crypto-blue/30">
-                          <AvatarImage 
-                            src={conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.avatar_url || undefined} 
-                          />
-                          <AvatarFallback className="bg-crypto-blue/20">
-                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.first_name[0]}
-                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.last_name[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.first_name}{" "}
-                            {conversations.find(c => c.id === selectedConversation)?.participants[0]?.profiles.last_name}
-                          </h3>
-                        </div>
-                      </>
-                    )}
+                <div className="flex items-center justify-between p-4 border-b border-glass-border bg-card/30">
+                  <div className="flex items-center space-x-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedConversation(null)}
+                      className="md:hidden rounded-full"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <div className="relative">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={selectedConvo.otherUser.avatar_url} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {getInitials(selectedConvo.otherUser.first_name, selectedConvo.otherUser.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {onlineUsers.has(selectedConvo.otherUser.user_id) && (
+                        <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">
+                        {selectedConvo.otherUser.first_name} {selectedConvo.otherUser.last_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {onlineUsers.has(selectedConvo.otherUser.user_id) ? 'Active now' : 'Offline'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <Phone className="h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <Video className="h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <MoreVertical className="h-5 w-5" />
+                    </Button>
                   </div>
                 </div>
 
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-3">
-                    {messages.map((message, index) => {
-                      const isOwnMessage = message.sender_id === user?.id;
-                      const showAvatar = index === 0 || messages[index - 1].sender_id !== message.sender_id;
-                      
+                  <div className="space-y-4">
+                    {messages.map((msg) => {
+                      const isOwn = msg.sender_id === currentUser.id;
                       return (
                         <div
-                          key={message.id}
-                          className={`flex gap-2 ${isOwnMessage ? "flex-row-reverse" : ""}`}
+                          key={msg.id}
+                          className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
-                          {showAvatar ? (
-                            <Avatar className="h-8 w-8 border-2 border-crypto-blue/30 flex-shrink-0">
-                              <AvatarImage src={message.profiles.avatar_url || undefined} />
-                              <AvatarFallback className="bg-crypto-blue/20 text-xs">
-                                {message.profiles.first_name[0]}
-                                {message.profiles.last_name[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : (
-                            <div className="w-8 flex-shrink-0" />
-                          )}
-                          <div className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} max-w-[70%]`}>
-                            <div
-                              className={`rounded-2xl px-4 py-2 ${
-                                isOwnMessage
-                                  ? "bg-gradient-to-r from-crypto-blue to-crypto-gold text-white rounded-tr-sm"
-                                  : "glass border border-crypto-blue/20 text-foreground rounded-tl-sm"
-                              }`}
-                            >
-                              <p className="text-sm break-words">{message.content}</p>
+                          <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                            {!isOwn && (
+                              <Avatar className="h-7 w-7 flex-shrink-0">
+                                <AvatarImage src={selectedConvo.otherUser.avatar_url} />
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {getInitials(selectedConvo.otherUser.first_name, selectedConvo.otherUser.last_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            <div className={`space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
+                              <div
+                                className={`rounded-2xl px-4 py-2 ${
+                                  isOwn
+                                    ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                    : 'glass-card rounded-bl-sm'
+                                }`}
+                              >
+                                <p className="text-sm break-words">{msg.content}</p>
+                              </div>
+                              <span className="text-xs text-muted-foreground px-2">
+                                {format(new Date(msg.created_at), 'h:mm a')}
+                              </span>
                             </div>
-                            <span className="text-xs text-muted-foreground mt-1 px-2">
-                              {new Date(message.created_at).toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </span>
                           </div>
                         </div>
                       );
@@ -358,34 +597,45 @@ export const ChatPage = () => {
                   </div>
                 </ScrollArea>
 
-                {/* Input Area */}
-                <form onSubmit={handleSendMessage} className="p-4 border-t border-crypto-blue/20 bg-secondary/30">
-                  <div className="flex gap-2">
+                {/* Message Input */}
+                <div className="p-4 border-t border-glass-border bg-card/30">
+                  <div className="flex items-center space-x-2">
                     <Input
+                      placeholder="Type a message..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      className="flex-1 glass border-crypto-blue/20 focus:border-crypto-blue"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      className="flex-1 glass-card rounded-full border-none"
                     />
                     <Button
-                      type="submit"
-                      disabled={loading || !newMessage.trim()}
-                      className="bg-gradient-to-r from-crypto-blue to-crypto-gold hover:opacity-90 crypto-glow"
-                      size="icon"
+                      onClick={sendMessage}
+                      disabled={!newMessage.trim()}
+                      className="rounded-full h-10 w-10 p-0"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                </form>
+                </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
-                <MessageSquare className="h-16 w-16 mb-4 opacity-50" />
-                <p className="text-lg font-medium">Select a conversation</p>
-                <p className="text-sm">Choose a chat from the list to start messaging</p>
+              <div className="flex-1 flex items-center justify-center text-center p-6">
+                <div>
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Search className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-orbitron font-bold mb-2">Your Messages</h3>
+                  <p className="text-muted-foreground max-w-sm">
+                    Search for users by username to start a conversation or select an existing chat
+                  </p>
+                </div>
               </div>
             )}
-          </Card>
+          </div>
         </div>
       </div>
     </div>
