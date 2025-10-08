@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Send, Search, X, Users, Minimize2 } from "lucide-react";
+import { MessageCircle, Send, Search, X, Users, Minimize2, ArrowLeft, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface User {
   user_id: string;
@@ -317,30 +318,33 @@ export const MessengerChat = () => {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl crypto-glow z-50"
+          className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl crypto-glow z-50 bg-primary hover:bg-primary/90 transition-all duration-300 hover:scale-110"
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-7 w-7" />
         </Button>
       )}
 
       {/* Chat Window */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 w-[380px] glass-card shadow-2xl z-50 transition-all duration-300 ${
-            isMinimized ? 'h-16' : 'h-[600px]'
-          }`}
+          className={`fixed bottom-6 right-6 w-full md:w-[420px] glass-card shadow-2xl z-50 transition-all duration-300 rounded-2xl overflow-hidden ${
+            isMinimized ? 'h-16' : 'h-[90vh] md:h-[650px]'
+          } max-w-[calc(100vw-3rem)]`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-glass-border">
-            <div className="flex items-center space-x-2">
-              <MessageCircle className="h-5 w-5 text-crypto-blue" />
-              <h3 className="font-orbitron font-semibold">Messages</h3>
+          <div className="flex items-center justify-between p-4 border-b border-glass-border bg-card/50 backdrop-blur-xl">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <MessageCircle className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-orbitron font-bold text-lg">Messenger</h3>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMinimized(!isMinimized)}
+                className="h-9 w-9 rounded-full hover:bg-secondary/80"
               >
                 <Minimize2 className="h-4 w-4" />
               </Button>
@@ -348,6 +352,7 @@ export const MessengerChat = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
+                className="h-9 w-9 rounded-full hover:bg-secondary/80"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -359,15 +364,15 @@ export const MessengerChat = () => {
               {!selectedConversation ? (
                 <>
                   {/* Search Bar */}
-                  <div className="p-3 border-b border-glass-border">
+                  <div className="p-4 border-b border-glass-border bg-card/30">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search users by username..."
+                        placeholder="Search by username..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onFocus={() => setShowSearch(true)}
-                        className="pl-10 glass"
+                        className="pl-10 glass-card h-11 rounded-full border-none focus-visible:ring-2 focus-visible:ring-primary/50"
                       />
                     </div>
                   </div>
@@ -375,35 +380,44 @@ export const MessengerChat = () => {
                   {/* Search Results */}
                   {showSearch && searchResults.length > 0 && (
                     <ScrollArea className="flex-1 border-b border-glass-border">
-                      <div className="p-2">
-                        <p className="text-xs text-muted-foreground px-3 py-2">
-                          Search Results
-                        </p>
+                      <div className="p-3">
+                        <div className="flex items-center justify-between px-3 py-2 mb-2">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                            Search Results
+                          </p>
+                          <Badge variant="outline" className="text-xs">
+                            {searchResults.length}
+                          </Badge>
+                        </div>
                         {searchResults.map((user) => (
                           <button
                             key={user.user_id}
                             onClick={() => startConversation(user)}
-                            className="w-full flex items-center space-x-3 p-3 hover:bg-secondary/50 rounded-lg transition-colors"
+                            className="w-full flex items-center space-x-3 p-3 hover:bg-secondary/70 rounded-xl transition-all duration-200 hover:scale-[1.02] group"
                           >
                             <div className="relative">
-                              <Avatar>
+                              <Avatar className="h-12 w-12 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
                                 <AvatarImage src={user.avatar_url} />
-                                <AvatarFallback>
+                                <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                   {getInitials(user.first_name, user.last_name)}
                                 </AvatarFallback>
                               </Avatar>
                               {user.isOnline && (
-                                <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-crypto-green rounded-full border-2 border-background animate-pulse" />
                               )}
                             </div>
-                            <div className="flex-1 text-left">
-                              <p className="font-medium text-sm">
+                            <div className="flex-1 text-left min-w-0">
+                              <p className="font-semibold text-sm truncate">
                                 {user.first_name} {user.last_name}
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                @{user.username || 'No username'}
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <span className="truncate">@{user.username || 'No username'}</span>
+                                {user.isOnline && (
+                                  <span className="text-crypto-green">• Active</span>
+                                )}
                               </p>
                             </div>
+                            <UserPlus className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
                           </button>
                         ))}
                       </div>
@@ -413,31 +427,37 @@ export const MessengerChat = () => {
                   {/* Conversations List */}
                   {!showSearch && (
                     <ScrollArea className="flex-1">
-                      <div className="p-2">
-                        <div className="flex items-center justify-between px-3 py-2">
-                          <p className="text-xs text-muted-foreground flex items-center space-x-1">
-                            <Users className="h-3 w-3" />
-                            <span>Conversations</span>
+                      <div className="p-3">
+                        <div className="flex items-center justify-between px-3 py-2 mb-2">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center space-x-1.5">
+                            <Users className="h-3.5 w-3.5" />
+                            <span>Chats</span>
                           </p>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
                             {conversations.length}
                           </Badge>
                         </div>
                         {conversations.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground text-sm">
-                            No conversations yet. Search for users to start chatting!
+                          <div className="text-center py-12 px-6">
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                              <MessageCircle className="h-8 w-8 text-primary" />
+                            </div>
+                            <p className="text-sm font-semibold mb-2">No conversations yet</p>
+                            <p className="text-xs text-muted-foreground">
+                              Search for users by username to start chatting!
+                            </p>
                           </div>
                         ) : (
                           conversations.map((convo) => (
                             <button
                               key={convo.id}
                               onClick={() => setSelectedConversation(convo.id)}
-                              className="w-full flex items-center space-x-3 p-3 hover:bg-secondary/50 rounded-lg transition-colors"
+                              className="w-full flex items-center space-x-3 p-3 hover:bg-secondary/70 rounded-xl transition-all duration-200 hover:scale-[1.01] group mb-1"
                             >
                               <div className="relative">
-                                <Avatar>
+                                <Avatar className="h-12 w-12 ring-2 ring-transparent group-hover:ring-primary/30 transition-all">
                                   <AvatarImage src={convo.otherUser.avatar_url} />
-                                  <AvatarFallback>
+                                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                                     {getInitials(
                                       convo.otherUser.first_name,
                                       convo.otherUser.last_name
@@ -445,17 +465,20 @@ export const MessengerChat = () => {
                                   </AvatarFallback>
                                 </Avatar>
                                 {onlineUsers.has(convo.otherUser.user_id) && (
-                                  <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                                  <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-crypto-green rounded-full border-2 border-background animate-pulse" />
                                 )}
                               </div>
                               <div className="flex-1 text-left min-w-0">
-                                <p className="font-medium text-sm truncate">
+                                <p className="font-semibold text-sm truncate mb-0.5">
                                   {convo.otherUser.first_name} {convo.otherUser.last_name}
                                 </p>
                                 <p className="text-xs text-muted-foreground truncate">
-                                  {convo.lastMessage?.content || 'No messages yet'}
+                                  {convo.lastMessage?.content || 'Start a conversation'}
                                 </p>
                               </div>
+                              {onlineUsers.has(convo.otherUser.user_id) && (
+                                <div className="w-2 h-2 bg-crypto-green rounded-full animate-pulse" />
+                              )}
                             </button>
                           ))
                         )}
@@ -466,18 +489,19 @@ export const MessengerChat = () => {
               ) : (
                 <>
                   {/* Chat Header */}
-                  <div className="flex items-center space-x-3 p-3 border-b border-glass-border">
+                  <div className="flex items-center space-x-3 p-4 border-b border-glass-border bg-card/50 backdrop-blur-xl">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSelectedConversation(null)}
+                      className="h-9 w-9 rounded-full hover:bg-secondary/80"
                     >
-                      <X className="h-4 w-4" />
+                      <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div className="relative">
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-11 w-11 ring-2 ring-primary/20">
                         <AvatarImage src={selectedConvo?.otherUser.avatar_url} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                           {getInitials(
                             selectedConvo?.otherUser.first_name || '',
                             selectedConvo?.otherUser.last_name || ''
@@ -485,59 +509,101 @@ export const MessengerChat = () => {
                         </AvatarFallback>
                       </Avatar>
                       {selectedConvo && onlineUsers.has(selectedConvo.otherUser.user_id) && (
-                        <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                        <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-crypto-green rounded-full border-2 border-background animate-pulse" />
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">
                         {selectedConvo?.otherUser.first_name} {selectedConvo?.otherUser.last_name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedConvo && onlineUsers.has(selectedConvo.otherUser.user_id)
-                          ? 'Active now'
-                          : 'Offline'}
+                      <p className="text-xs flex items-center gap-1">
+                        {selectedConvo && onlineUsers.has(selectedConvo.otherUser.user_id) ? (
+                          <>
+                            <span className="w-1.5 h-1.5 bg-crypto-green rounded-full animate-pulse" />
+                            <span className="text-crypto-green font-medium">Active now</span>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">Offline</span>
+                        )}
                       </p>
                     </div>
                   </div>
 
                   {/* Messages */}
-                  <ScrollArea className="flex-1 p-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`mb-3 flex ${
-                          msg.sender_id === currentUser.id ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                            msg.sender_id === currentUser.id
-                              ? 'bg-crypto-blue text-primary-foreground'
-                              : 'glass'
-                          }`}
-                        >
-                          <p className="text-sm">{msg.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {format(new Date(msg.created_at), 'HH:mm')}
+                  <ScrollArea className="flex-1 p-4 bg-card/20">
+                    {messages.length === 0 ? (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="text-center py-8 px-6">
+                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                            <MessageCircle className="h-8 w-8 text-primary" />
+                          </div>
+                          <p className="text-sm font-semibold mb-2">No messages yet</p>
+                          <p className="text-xs text-muted-foreground">
+                            Start the conversation with a friendly message!
                           </p>
                         </div>
                       </div>
-                    ))}
-                    <div ref={messagesEndRef} />
+                    ) : (
+                      <>
+                        {messages.map((msg, idx) => {
+                          const isOwnMessage = msg.sender_id === currentUser.id;
+                          const showAvatar = idx === messages.length - 1 || messages[idx + 1]?.sender_id !== msg.sender_id;
+                          
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`mb-2 flex ${isOwnMessage ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                            >
+                              <div className={`flex items-end gap-2 max-w-[75%] ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                                {!isOwnMessage && (
+                                  <Avatar className={`h-7 w-7 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
+                                    <AvatarImage src={selectedConvo?.otherUser.avatar_url} />
+                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                      {getInitials(
+                                        selectedConvo?.otherUser.first_name || '',
+                                        selectedConvo?.otherUser.last_name || ''
+                                      )}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )}
+                                <div
+                                  className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+                                    isOwnMessage
+                                      ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                      : 'glass-card rounded-bl-sm'
+                                  }`}
+                                >
+                                  <p className="text-sm leading-relaxed break-words">{msg.content}</p>
+                                  <p className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                                    {format(new Date(msg.created_at), 'HH:mm')}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div ref={messagesEndRef} />
+                      </>
+                    )}
                   </ScrollArea>
 
                   {/* Input */}
-                  <div className="p-3 border-t border-glass-border">
-                    <div className="flex space-x-2">
+                  <div className="p-4 border-t border-glass-border bg-card/50 backdrop-blur-xl">
+                    <div className="flex items-end space-x-2">
                       <Input
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                        className="glass"
+                        onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                        className="glass-card rounded-full px-4 h-11 border-none focus-visible:ring-2 focus-visible:ring-primary/50 resize-none"
                       />
-                      <Button onClick={sendMessage} size="icon" className="crypto-glow">
-                        <Send className="h-4 w-4" />
+                      <Button 
+                        onClick={sendMessage} 
+                        size="icon" 
+                        disabled={!newMessage.trim()}
+                        className="h-11 w-11 rounded-full bg-primary hover:bg-primary/90 crypto-glow transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Send className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>
