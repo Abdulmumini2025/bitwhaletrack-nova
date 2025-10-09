@@ -245,7 +245,11 @@ export const ChatPage = () => {
       const { data } = await supabase
         .rpc('search_users_by_username', { search_term: searchQuery });
 
-      const filtered = (data || []).filter((u: User) => u.user_id !== currentUser?.id);
+      // Filter out current user and users without username
+      const filtered = (data || []).filter((u: User) => 
+        u.user_id !== currentUser?.id && u.username && u.username.trim() !== ''
+      );
+      
       setSearchResults(filtered.map((u: User) => ({
         ...u,
         isOnline: onlineUsers.has(u.user_id),
@@ -358,20 +362,20 @@ export const ChatPage = () => {
   const selectedConvo = conversations.find((c) => c.id === selectedConversation);
 
   return (
-    <div className="min-h-screen bg-background pt-20">
-      <div className="container mx-auto h-[calc(100vh-5rem)]">
-        <div className="h-full glass-card rounded-2xl overflow-hidden flex">
+    <div className="min-h-screen bg-background pt-16 md:pt-20">
+      <div className="container mx-auto px-0 md:px-4 h-[calc(100vh-4rem)] md:h-[calc(100vh-5rem)]">
+        <div className="h-full glass-card md:rounded-2xl overflow-hidden flex shadow-xl">
           {/* Sidebar - Conversations List */}
-          <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-96 flex-col border-r border-glass-border`}>
+          <div className={`${selectedConversation ? 'hidden md:flex' : 'flex'} w-full md:w-96 lg:w-[380px] flex-col border-r border-glass-border bg-card/50`}>
             {/* Sidebar Header */}
-            <div className="p-4 border-b border-glass-border bg-card/30">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-orbitron font-bold text-gradient">Chats</h1>
+            <div className="p-3 md:p-4 border-b border-glass-border bg-card/30 backdrop-blur-xl">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-xl md:text-2xl font-orbitron font-bold text-gradient">Chats</h1>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => navigate("/")}
-                  className="rounded-full"
+                  className="rounded-full hover:bg-secondary/50 h-9 w-9"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -388,7 +392,7 @@ export const ChatPage = () => {
                     setShowSearch(true);
                   }}
                   onFocus={() => setShowSearch(true)}
-                  className="pl-10 glass-card rounded-full border-none"
+                  className="pl-10 glass-card rounded-full border-none h-10 text-sm"
                 />
               </div>
             </div>
@@ -405,34 +409,34 @@ export const ChatPage = () => {
                   {searchResults.map((user) => (
                     <div
                       key={user.user_id}
-                      className="flex items-center justify-between p-3 hover:bg-secondary/50 rounded-xl transition-all mb-1 group"
+                      className="flex items-center justify-between p-2.5 md:p-3 hover:bg-secondary/50 rounded-xl transition-all mb-1 group"
                     >
-                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      <div className="flex items-center space-x-2.5 md:space-x-3 flex-1 min-w-0">
                         <div className="relative flex-shrink-0">
-                          <Avatar className="h-12 w-12 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
+                          <Avatar className="h-11 w-11 md:h-12 md:w-12 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
                             <AvatarImage src={user.avatar_url} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                               {getInitials(user.first_name, user.last_name)}
                             </AvatarFallback>
                           </Avatar>
                           {user.isOnline && (
-                            <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                            <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background animate-pulse" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">
+                          <p className="font-semibold text-sm md:text-base truncate">
                             {user.first_name} {user.last_name}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
-                            @{user.username || 'No username'}
+                            @{user.username}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                         <Button
                           size="sm"
                           onClick={() => startConversation(user)}
-                          className="h-8 px-3 rounded-full text-xs"
+                          className="h-8 px-2.5 md:px-3 rounded-full text-xs crypto-glow"
                         >
                           Message
                         </Button>
@@ -463,24 +467,24 @@ export const ChatPage = () => {
                       <button
                         key={convo.id}
                         onClick={() => setSelectedConversation(convo.id)}
-                        className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all mb-1 hover:bg-secondary/50 ${
-                          selectedConversation === convo.id ? 'bg-secondary/70' : ''
+                        className={`w-full flex items-center space-x-2.5 md:space-x-3 p-2.5 md:p-3 rounded-xl transition-all mb-1 hover:bg-secondary/50 ${
+                          selectedConversation === convo.id ? 'bg-secondary/70 shadow-lg' : ''
                         }`}
                       >
                         <div className="relative flex-shrink-0">
-                          <Avatar className="h-14 w-14">
+                          <Avatar className="h-12 w-12 md:h-14 md:w-14 ring-2 ring-primary/10">
                             <AvatarImage src={convo.otherUser.avatar_url} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                               {getInitials(convo.otherUser.first_name, convo.otherUser.last_name)}
                             </AvatarFallback>
                           </Avatar>
                           {onlineUsers.has(convo.otherUser.user_id) && (
-                            <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-crypto-green rounded-full border-2 border-background" />
+                            <span className="absolute bottom-0 right-0 h-3 w-3 md:h-3.5 md:w-3.5 bg-crypto-green rounded-full border-2 border-background animate-pulse" />
                           )}
                         </div>
                         <div className="flex-1 text-left min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-semibold text-sm truncate">
+                          <div className="flex items-center justify-between mb-0.5 md:mb-1">
+                            <p className="font-semibold text-sm md:text-base truncate">
                               {convo.otherUser.first_name} {convo.otherUser.last_name}
                             </p>
                             {convo.lastMessage && (
@@ -490,11 +494,11 @@ export const ChatPage = () => {
                             )}
                           </div>
                           <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className={`text-xs truncate ${convo.unreadCount! > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                               {convo.lastMessage?.content || 'No messages yet'}
                             </p>
                             {convo.unreadCount! > 0 && (
-                              <Badge className="ml-2 h-5 min-w-5 rounded-full bg-primary text-xs px-1.5">
+                              <Badge className="ml-2 h-4 md:h-5 min-w-4 md:min-w-5 rounded-full bg-primary text-xs px-1.5 animate-pulse">
                                 {convo.unreadCount}
                               </Badge>
                             )}
@@ -509,33 +513,33 @@ export const ChatPage = () => {
           </div>
 
           {/* Chat Area */}
-          <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col`}>
+          <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} flex-1 flex-col bg-background/50`}>
             {selectedConvo ? (
               <>
                 {/* Chat Header */}
-                <div className="flex items-center justify-between p-4 border-b border-glass-border bg-card/30">
-                  <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-between p-3 md:p-4 border-b border-glass-border bg-card/30 backdrop-blur-xl">
+                  <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSelectedConversation(null)}
-                      className="md:hidden rounded-full"
+                      className="md:hidden rounded-full h-9 w-9 flex-shrink-0"
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
+                    <div className="relative flex-shrink-0">
+                      <Avatar className="h-9 w-9 md:h-10 md:w-10">
                         <AvatarImage src={selectedConvo.otherUser.avatar_url} />
-                        <AvatarFallback className="bg-primary/10 text-primary">
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
                           {getInitials(selectedConvo.otherUser.first_name, selectedConvo.otherUser.last_name)}
                         </AvatarFallback>
                       </Avatar>
                       {onlineUsers.has(selectedConvo.otherUser.user_id) && (
-                        <span className="absolute bottom-0 right-0 h-3 w-3 bg-crypto-green rounded-full border-2 border-background" />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 md:h-3 md:w-3 bg-crypto-green rounded-full border-2 border-background animate-pulse" />
                       )}
                     </div>
-                    <div>
-                      <p className="font-semibold text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm md:text-base truncate">
                         {selectedConvo.otherUser.first_name} {selectedConvo.otherUser.last_name}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -543,22 +547,22 @@ export const ChatPage = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1">
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Phone className="h-5 w-5" />
+                  <div className="flex items-center space-x-0.5 md:space-x-1 flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:bg-secondary/50">
+                      <Phone className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Video className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:bg-secondary/50">
+                      <Video className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <MoreVertical className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 md:h-10 md:w-10 hover:bg-secondary/50">
+                      <MoreVertical className="h-4 w-4 md:h-5 md:w-5" />
                     </Button>
                   </div>
                 </div>
 
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 p-3 md:p-4 bg-background/30">
+                  <div className="space-y-2 md:space-y-3">
                     {messages.map((msg) => {
                       const isOwn = msg.sender_id === currentUser.id;
                       return (
@@ -566,24 +570,24 @@ export const ChatPage = () => {
                           key={msg.id}
                           className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`flex items-end space-x-2 max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                          <div className={`flex items-end space-x-1.5 md:space-x-2 max-w-[85%] md:max-w-[70%] ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
                             {!isOwn && (
-                              <Avatar className="h-7 w-7 flex-shrink-0">
+                              <Avatar className="h-6 w-6 md:h-7 md:w-7 flex-shrink-0">
                                 <AvatarImage src={selectedConvo.otherUser.avatar_url} />
                                 <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                   {getInitials(selectedConvo.otherUser.first_name, selectedConvo.otherUser.last_name)}
                                 </AvatarFallback>
                               </Avatar>
                             )}
-                            <div className={`space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
+                            <div className={`space-y-0.5 md:space-y-1 ${isOwn ? 'items-end' : 'items-start'} flex flex-col`}>
                               <div
-                                className={`rounded-2xl px-4 py-2 ${
+                                className={`rounded-2xl px-3 py-2 md:px-4 md:py-2.5 ${
                                   isOwn
-                                    ? 'bg-primary text-primary-foreground rounded-br-sm'
-                                    : 'glass-card rounded-bl-sm'
+                                    ? 'bg-primary text-primary-foreground rounded-br-sm shadow-lg'
+                                    : 'glass-card rounded-bl-sm shadow-md'
                                 }`}
                               >
-                                <p className="text-sm break-words">{msg.content}</p>
+                                <p className="text-sm md:text-base break-words leading-relaxed">{msg.content}</p>
                               </div>
                               <span className="text-xs text-muted-foreground px-2">
                                 {format(new Date(msg.created_at), 'h:mm a')}
@@ -598,13 +602,13 @@ export const ChatPage = () => {
                 </ScrollArea>
 
                 {/* Message Input */}
-                <div className="p-4 border-t border-glass-border bg-card/30">
-                  <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0">
-                      <ImageIcon className="h-5 w-5 text-primary" />
+                <div className="p-3 md:p-4 border-t border-glass-border bg-card/30 backdrop-blur-xl">
+                  <div className="flex items-center space-x-1.5 md:space-x-2">
+                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0 h-8 w-8 md:h-10 md:w-10 hover:bg-secondary/50">
+                      <ImageIcon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0">
-                      <Paperclip className="h-5 w-5 text-primary" />
+                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0 h-8 w-8 md:h-10 md:w-10 hover:bg-secondary/50">
+                      <Paperclip className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </Button>
                     <Input
                       placeholder="Aa"
@@ -616,16 +620,16 @@ export const ChatPage = () => {
                           sendMessage();
                         }
                       }}
-                      className="flex-1 glass-card rounded-full border-none bg-secondary/30"
+                      className="flex-1 glass-card rounded-full border-none bg-secondary/30 h-9 md:h-10 px-4 text-sm md:text-base focus-visible:ring-2 focus-visible:ring-primary/50"
                     />
-                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0">
-                      <Smile className="h-5 w-5 text-primary" />
+                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0 h-8 w-8 md:h-10 md:w-10 hover:bg-secondary/50">
+                      <Smile className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                     </Button>
                     <Button
                       onClick={sendMessage}
                       disabled={!newMessage.trim()}
                       size="icon"
-                      className="rounded-full flex-shrink-0"
+                      className="rounded-full flex-shrink-0 h-8 w-8 md:h-10 md:w-10 crypto-glow disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
@@ -633,13 +637,13 @@ export const ChatPage = () => {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-center p-6">
+              <div className="flex-1 flex items-center justify-center text-center p-6 bg-background/30">
                 <div>
-                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Search className="h-12 w-12 text-primary" />
+                  <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-4 md:mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Search className="h-10 w-10 md:h-12 md:w-12 text-primary" />
                   </div>
-                  <h3 className="text-xl font-orbitron font-bold mb-2">Your Messages</h3>
-                  <p className="text-muted-foreground max-w-sm">
+                  <h3 className="text-lg md:text-xl font-orbitron font-bold mb-2">Your Messages</h3>
+                  <p className="text-sm md:text-base text-muted-foreground max-w-sm px-4">
                     Search for users by username to start a conversation or select an existing chat
                   </p>
                 </div>

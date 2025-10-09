@@ -59,17 +59,40 @@ export const ProfileSettings = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Check if profile exists first
+      const { data: existingProfile } = await supabase
         .from("profiles")
-        .update({
-          username: profile.username,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          bio: profile.bio,
-        })
-        .eq('user_id', currentUser.id);
+        .select("id")
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            username: profile.username,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            bio: profile.bio,
+          })
+          .eq('user_id', currentUser.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new profile if it doesn't exist
+        const { error } = await supabase
+          .from("profiles")
+          .insert({
+            user_id: currentUser.id,
+            username: profile.username,
+            first_name: profile.first_name,
+            last_name: profile.last_name,
+            bio: profile.bio,
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
