@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Send, Search, ArrowLeft, UserPlus, MoreVertical, Phone, Video } from "lucide-react";
+import { Send, Search, ArrowLeft, MoreVertical, Phone, Video, Smile, Image as ImageIcon, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { FriendRequestButton } from "@/components/FriendRequestButton";
@@ -432,9 +432,9 @@ export const ChatPage = () => {
                         <Button
                           size="sm"
                           onClick={() => startConversation(user)}
-                          className="h-8 w-8 p-0 rounded-full"
+                          className="h-8 px-3 rounded-full text-xs"
                         >
-                          <UserPlus className="h-4 w-4" />
+                          Message
                         </Button>
                         <FriendRequestButton userId={user.user_id} />
                       </div>
@@ -600,8 +600,14 @@ export const ChatPage = () => {
                 {/* Message Input */}
                 <div className="p-4 border-t border-glass-border bg-card/30">
                   <div className="flex items-center space-x-2">
+                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0">
+                      <ImageIcon className="h-5 w-5 text-primary" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0">
+                      <Paperclip className="h-5 w-5 text-primary" />
+                    </Button>
                     <Input
-                      placeholder="Type a message..."
+                      placeholder="Aa"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={(e) => {
@@ -610,12 +616,16 @@ export const ChatPage = () => {
                           sendMessage();
                         }
                       }}
-                      className="flex-1 glass-card rounded-full border-none"
+                      className="flex-1 glass-card rounded-full border-none bg-secondary/30"
                     />
+                    <Button variant="ghost" size="icon" className="rounded-full flex-shrink-0">
+                      <Smile className="h-5 w-5 text-primary" />
+                    </Button>
                     <Button
                       onClick={sendMessage}
                       disabled={!newMessage.trim()}
-                      className="rounded-full h-10 w-10 p-0"
+                      size="icon"
+                      className="rounded-full flex-shrink-0"
                     >
                       <Send className="h-4 w-4" />
                     </Button>

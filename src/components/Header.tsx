@@ -106,6 +106,16 @@ export const Header = () => {
           {/* User Menu */}
           <div className="flex items-center space-x-2">
             {user && <NotificationDropdown />}
+            {user && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="crypto-glow relative"
+                onClick={() => navigate("/chat")}
+              >
+                <MessageSquare className="h-5 w-5" />
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="crypto-glow">
@@ -124,12 +134,6 @@ export const Header = () => {
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/create-news" className="w-full">Submit News</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/chat" className="w-full flex items-center">
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Messages
-                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to="/contact" className="w-full">Contact Us</Link>

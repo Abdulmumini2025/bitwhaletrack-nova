@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { PriceTicker } from "@/components/PriceTicker";
 import { BreakingNews } from "@/components/BreakingNews";
 import { NewsCard } from "@/components/NewsCard";
-import { ChatBot } from "@/components/ChatBot";
 import { MessengerChat } from "@/components/MessengerChat";
 import { CryptoNewsTicker } from "@/components/CryptoNewsTicker";
 import { supabase } from "@/integrations/supabase/client";
@@ -494,9 +493,6 @@ export const HomePage = () => {
         </section>
       </main>
 
-      {/* AI Chatbot */}
-      <ChatBot />
-      
       {/* Messenger Chat */}
       <MessengerChat />
 

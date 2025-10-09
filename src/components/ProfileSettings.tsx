@@ -61,15 +61,13 @@ export const ProfileSettings = () => {
     try {
       const { error } = await supabase
         .from("profiles")
-        .upsert({
-          user_id: currentUser.id,
+        .update({
           username: profile.username,
           first_name: profile.first_name,
           last_name: profile.last_name,
           bio: profile.bio,
-        }, {
-          onConflict: 'user_id'
-        });
+        })
+        .eq('user_id', currentUser.id);
 
       if (error) throw error;
 
